@@ -14,10 +14,10 @@ namespace Mod
     [BepInPlugin(GUID, NAME, VERSION)]
     public class Plugin : BaseUnityPlugin
     {
-        public const string GUID = "creator.etg.modname";
-        public const string NAME = "MOD NAME";
-        public const string VERSION = "0.0.0";
-        public const string TEXT_COLOR = "#00FFFF";
+        public const string GUID = "sandlings-united.etg.sandling-invasion";
+        public const string NAME = "Sandling invasion!";
+        public const string VERSION = "0.1.0";
+        public const string TEXT_COLOR = "#FFD97F";
 
         public void Start()
         {
