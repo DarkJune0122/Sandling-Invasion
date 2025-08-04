@@ -5,7 +5,7 @@ using System.Text;
 using UnityEngine;
 using Alexandria.ItemAPI;
 
-namespace Mod;
+namespace SandlingInvasion;
 
 public class ExamplePassive : PassiveItem
 {
@@ -16,7 +16,7 @@ public class ExamplePassive : PassiveItem
         string itemName = "Example Item Name";
 
         //Refers to an embedded png in the project. Make sure to embed your resources! Google it
-        string resourceName = "SandlingInvasion/Resources/example_item_sprite";
+        string resourceName = $"{nameof(SandlingInvasion)}/Resources/example_item_sprite";
 
         //Create new GameObject
         GameObject obj = new GameObject(itemName);

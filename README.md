@@ -5,7 +5,7 @@ This is a community mod, specially made for Konoobi, VTuber!
 
 We sincerely hope that you will enjoy playing with this mod!
 <sup><sub><i>
-And that she will be too busy to invade "No kobi" channel  again.
+And that she will be too busy to invade "No kobi" channel again.
 </sub></sup></i>.
 
 ## Content:

@@ -7,7 +7,7 @@ using System.Linq;
 using System.Text;
 using UnityEngine;
 
-namespace Mod
+namespace SandlingInvasion
 {
     [BepInDependency(Alexandria.Alexandria.GUID)] // this mod depends on the Alexandria API: https://enter-the-gungeon.thunderstore.io/package/Alexandria/Alexandria/
     [BepInDependency(ETGModMainBehaviour.GUID)]
@@ -15,7 +15,7 @@ namespace Mod
     public class Plugin : BaseUnityPlugin
     {
         public const string GUID = "sandlings-united.etg.sandling-invasion";
-        public const string NAME = "Sandling invasion!";
+        public const string NAME = "Sandling Invasion!";
         public const string VERSION = "0.1.0";
         public const string TEXT_COLOR = "#FFD97F";
 
