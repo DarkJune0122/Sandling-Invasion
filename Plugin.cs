@@ -17,7 +17,7 @@ namespace SandlingInvasion
         public const string GUID = "sandlings-united.etg.sandling-invasion";
         public const string NAME = "Sandling Invasion!";
         public const string API = "SandlingAPI";
-        public const string VERSION = "0.1.1";
+        public const string VERSION = "0.1.2";
         public const string TEXT_COLOR = "#FFD97F";
 
 
