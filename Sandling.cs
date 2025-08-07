@@ -127,7 +127,6 @@ public class Sandling : CompanionItem
     /// .                                               Spawn Behavior
     /// .
     /// ===     ===     ===     ===    ===  == =  -                        -  = ==  ===    ===     ===     ===     ===]]>
-    static bool spawned = false;
     protected static void SetupSpawn(GameManager manager)
     {
         PickupObject item = Game.Items.Get("gungeon:dog");
@@ -136,29 +135,16 @@ public class Sandling : CompanionItem
             GameManager manager = GameManager.Instance;
             foreach (var room in manager.Dungeon.data.rooms)
             {
-                room.OnEnemiesCleared += () =>
+                // Temporary solution.
+                if (Random.value <= 0.1f)
                 {
-                    if (spawned) return;
-                    spawned = true;
-
-                    // Always spawns for now.
-                    for (int i = 0; i < 16; i++)
+                    room.OnEnemiesCleared += () =>
                     {
                         LootEngine.SpawnItem(item.gameObject, room.area.UnitCenter, Vector2.up, 0f);
-                    }
-                };
+                    };
+                }
             }
         };
-    }
-
-    private static void SpawnItem(Vector2 position, PickupObject item)
-    {
-        var player = GameManager.Instance.PrimaryPlayer;
-        Vector2 spawnPosition = player.CenterPosition;
-        spawnPosition.x += 3.2f;
-        spawnPosition.y -= 3.2f;
-
-        LootEngine.SpawnItem(item.gameObject, spawnPosition, Vector2.up, 0f);
     }
 
 

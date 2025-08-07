@@ -35,7 +35,8 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <PropertyGroup>
-    <ApplicationIcon>icon.ico</ApplicationIcon>
+    <ApplicationIcon>
+    </ApplicationIcon>
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="ExamplePassive.cs" />
@@ -249,7 +250,6 @@
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
-    <Content Include="icon.ico" />
     <EmbeddedResource Include="Resources\dog_item_001.png" />
     <None Include="Resources\dog_item_002.png" />
     <None Include="Resources\Sandling_item.png" />
