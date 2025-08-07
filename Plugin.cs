@@ -49,18 +49,23 @@ namespace SandlingInvasion
         {
             try
             {
-                RegisterAll();
+                RegisterAll(g);
             }
             catch (Exception e)
             {
-                Log($"{NAME} v{VERSION} was NOT loaded successfully! See the exception:", "#FF1212");
-                Log(e.Message, "#FF1212");
-                Log(e.StackTrace, "#FF1212");
+                Warning($"{NAME} v{VERSION} was NOT loaded successfully! See the exception:");
+                Warning(e.Message);
+                Warning(e.StackTrace);
             }
             finally
             {
                 Log($"{NAME} v{VERSION} started successfully.", TEXT_COLOR);
             }
+        }
+
+        private void G_OnNewLevelFullyLoaded()
+        {
+            Log($"Loaded!", "#1221F1");
         }
 
 
@@ -72,12 +77,12 @@ namespace SandlingInvasion
         /// .                                               Static Methods
         /// .
         /// ===     ===     ===     ===    ===  == =  -                        -  = ==  ===    ===     ===     ===     ===]]>
-        public static void RegisterAll()
+        public static void RegisterAll(GameManager manager)
         {
             if (Initialized) return;
 
             // Registers items:
-            Sandling.Register();
+            Sandling.Register(manager);
 
             // Should it be moved to the beginning of the registration?
             Initialized = true;
@@ -131,13 +136,38 @@ namespace SandlingInvasion
 
 
         public const string WarningColor = "#FF5656";
-        public static void Warning() => Log(string.Empty, WarningColor);
-        public static void Warning<T>(ICollection<T> values) => Log(values, WarningColor);
-        public static void Warning<T>(ICollection<T> values, Func<T, string> func) => Log(values, func, WarningColor);
-        public static void Warning<T>(IEnumerable<T> values, string color = "#FFFFFF") => Log(values, v => v.ToStringSafe(), color);
-        public static void Warning<T>(IEnumerable<T> values, Func<T, string> func, string color = "#FFFFFF") => Log(values, func, WarningColor);
-        public static void Warning(object obj) => Log(obj.ToStringSafe(), WarningColor);
-        public static void Warning(string text) => Log(text, WarningColor);
+        public static void Warning() => Warning(string.Empty);
+        public static void Warning<T>(ICollection<T> values) => Warning(values, v => v.ToStringSafe());
+        public static void Warning<T>(ICollection<T> values, Func<T, string> func)
+        {
+            foreach (T item in values)
+            {
+                Warning(func.Invoke(item));
+            }
+        }
+
+        public static void Warning<T>(IEnumerable<T> values) => Warning(values, v => v.ToStringSafe());
+        public static void Warning<T>(IEnumerable<T> values, Func<T, string> func)
+        {
+            foreach (T item in values)
+            {
+                Warning(func.Invoke(item));
+            }
+        }
+
+        public static void Warning(object obj) => Warning(obj.ToStringSafe());
+        public static void Warning(string text)
+        {
+            if (text.Contains('\n'))
+            {
+                foreach (var line in text.Split(SplitSeparators, StringSplitOptions.RemoveEmptyEntries))
+                {
+                    if (string.IsNullOrEmpty(line)) continue;
+                    else ETGModConsole.Log($"<color={WarningColor}>Warning: {line}</color>");
+                }
+            }
+            else ETGModConsole.Log($"<color={WarningColor}>Warning: {text}</color>");
+        }
 
 
 

@@ -1,9 +1,17 @@
-@echo false
+@echo on
 
 set "root=%cd%"
 set "deploy=%root%\deploy"
 set "file=SandlingInvasion.dll"
 set "zip=SandlingInvasion.zip"
+
+if exist "%deploy%" (
+	del /y "%deploy%"
+)
+
+if exist "%root%\%zip%" (
+	del /y "%root%\%zip%"
+)
 
 :: Remove "README" overwriting if you want mod to have description, different from the one on Github.
 xcopy /y "%root%\README.md" "%deploy%"

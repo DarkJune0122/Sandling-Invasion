@@ -1,4 +1,4 @@
-@echo false
+@echo off
 
 : GETOPTS
 if /i "%~1"=="" ( goto :SENDBUILD )
