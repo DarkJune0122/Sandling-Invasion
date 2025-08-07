@@ -1,13 +1,8 @@
-﻿using Alexandria;
-using Alexandria.ItemAPI;
-using BepInEx;
+﻿using BepInEx;
 using Gungeon;
-using JetBrains.Annotations;
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
@@ -108,6 +103,15 @@ namespace SandlingInvasion
             }
         }
 
+        public static void Log<T>(IEnumerable<T> values, string color = "#FFFFFF") => Log(values, v => v.ToStringSafe(), color);
+        public static void Log<T>(IEnumerable<T> values, Func<T, string> func, string color = "#FFFFFF")
+        {
+            foreach (T item in values)
+            {
+                Log(func.Invoke(item), color);
+            }
+        }
+
         public static void Log(object obj, string color = "#FFFFFF") => Log(obj.ToStringSafe(), color);
         public static void Log(string text, string color = "#FFFFFF")
         {
@@ -130,6 +134,8 @@ namespace SandlingInvasion
         public static void Warning() => Log(string.Empty, WarningColor);
         public static void Warning<T>(ICollection<T> values) => Log(values, WarningColor);
         public static void Warning<T>(ICollection<T> values, Func<T, string> func) => Log(values, func, WarningColor);
+        public static void Warning<T>(IEnumerable<T> values, string color = "#FFFFFF") => Log(values, v => v.ToStringSafe(), color);
+        public static void Warning<T>(IEnumerable<T> values, Func<T, string> func, string color = "#FFFFFF") => Log(values, func, WarningColor);
         public static void Warning(object obj) => Log(obj.ToStringSafe(), WarningColor);
         public static void Warning(string text) => Log(text, WarningColor);
 
@@ -146,6 +152,15 @@ namespace SandlingInvasion
             foreach (T item in values)
             {
                 Count(func.Invoke(item), key, color);
+            }
+        }
+
+        public static void Count<T>(IEnumerable<T> values, string color = "#FFFFFF") => Count(values, v => v.ToStringSafe(), color);
+        public static void Count<T>(IEnumerable<T> values, Func<T, string> func, string color = "#FFFFFF")
+        {
+            foreach (T item in values)
+            {
+                Count(func.Invoke(item), color);
             }
         }
 
