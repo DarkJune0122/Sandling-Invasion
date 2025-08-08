@@ -239,75 +239,75 @@ public class Sandling : CompanionItem
         position = room.area.Center;
         return true; // Temporary solution, because otherwise everything is VERY buggy.
 
-        if (room.Cells == null || room.Cells.Count == 0)
-        {
-            position = default;
-            return false;
-        }
+        //if (room.Cells == null || room.Cells.Count == 0)
+        //{
+        //    position = default;
+        //    return false;
+        //}
 
-        try
-        {
-            DungeonData dungeon = GameManager.Instance.Dungeon.data;
+        //try
+        //{
+        //    DungeonData dungeon = GameManager.Instance.Dungeon.data;
 
-            // Defines min-max positions of the room.
-            int xMin = int.MaxValue, yMin = int.MaxValue, xMax = int.MinValue, yMax = int.MinValue;
-            foreach (var cell in room.Cells)
-            {
-                xMin = Mathf.Min(xMin, cell.x);
-                xMax = Mathf.Min(xMax, cell.x);
-                yMin = Mathf.Min(yMin, cell.y);
-                yMax = Mathf.Min(yMax, cell.y);
-            }
+        //    // Defines min-max positions of the room.
+        //    int xMin = int.MaxValue, yMin = int.MaxValue, xMax = int.MinValue, yMax = int.MinValue;
+        //    foreach (var cell in room.Cells)
+        //    {
+        //        xMin = Mathf.Min(xMin, cell.x);
+        //        xMax = Mathf.Min(xMax, cell.x);
+        //        yMin = Mathf.Min(yMin, cell.y);
+        //        yMax = Mathf.Min(yMax, cell.y);
+        //    }
 
-            float xCenter = (float)xMax - xMin;
-            float yCenter = (float)yMax - yMin;
+        //    float xCenter = (float)xMax - xMin;
+        //    float yCenter = (float)yMax - yMin;
 
-            // Looks for a valid cell.
-            float lastDistance = float.PositiveInfinity;
-            IntVector2 centerCell = default;
-            foreach (var cell in room.Cells)
-            {
-                float xDelta = cell.x - xCenter;
-                float yDelta = cell.y - yCenter;
-                float sqrDistance = xDelta * xDelta + yDelta * yDelta;
-                Plugin.Log(sqrDistance);
-                if (sqrDistance >= lastDistance)
-                {
-                    continue;
-                }
+        //    // Looks for a valid cell.
+        //    float lastDistance = float.PositiveInfinity;
+        //    IntVector2 centerCell = default;
+        //    foreach (var cell in room.Cells)
+        //    {
+        //        float xDelta = cell.x - xCenter;
+        //        float yDelta = cell.y - yCenter;
+        //        float sqrDistance = xDelta * xDelta + yDelta * yDelta;
+        //        Plugin.Log(sqrDistance);
+        //        if (sqrDistance >= lastDistance)
+        //        {
+        //            continue;
+        //        }
 
-                CellData data = dungeon[cell.x, cell.y];
-                Plugin.Log($"Data: " + data);
-                Plugin.Log($"Data.type: " + data.type);
-                if (data != null && data.type == CellType.FLOOR) // Accepts pit-only - any flags will be removed.
-                {
-                    // Cell is valid. Go for spawning.
-                    lastDistance = sqrDistance;
-                    centerCell = cell;
-                }
-            }
+        //        CellData data = dungeon[cell.x, cell.y];
+        //        Plugin.Log($"Data: " + data);
+        //        Plugin.Log($"Data.type: " + data.type);
+        //        if (data != null && data.type == CellType.FLOOR) // Accepts pit-only - any flags will be removed.
+        //        {
+        //            // Cell is valid. Go for spawning.
+        //            lastDistance = sqrDistance;
+        //            centerCell = cell;
+        //        }
+        //    }
 
-            Plugin.Log($"Lowest distance recorded: {lastDistance}");
-            if (lastDistance > 1_000_000f) // Likely bugged out.
-            {
-                position = room.area.Center;
-                return true;
-            }
-            else
-            {
-                position = centerCell.ToVector2() + new Vector2(0.5f, 0.5f);
-                return true;
-            }
-        }
-        catch (Exception e)
-        {
-            Plugin.Warning($"Cannot locate a room center without issues!");
-            Plugin.Warning(e.Message);
-            Plugin.Warning(e.StackTrace);
-        }
+        //    Plugin.Log($"Lowest distance recorded: {lastDistance}");
+        //    if (lastDistance > 1_000_000f) // Likely bugged out.
+        //    {
+        //        position = room.area.Center;
+        //        return true;
+        //    }
+        //    else
+        //    {
+        //        position = centerCell.ToVector2() + new Vector2(0.5f, 0.5f);
+        //        return true;
+        //    }
+        //}
+        //catch (Exception e)
+        //{
+        //    Plugin.Warning($"Cannot locate a room center without issues!");
+        //    Plugin.Warning(e.Message);
+        //    Plugin.Warning(e.StackTrace);
+        //}
 
-        position = default;
-        return false;
+        //position = default;
+        //return false;
     }
 
 
