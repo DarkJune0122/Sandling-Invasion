@@ -158,8 +158,6 @@ public class Sandling : CompanionItem
         
         DungeonHooks.OnPostDungeonGeneration += () =>
         {
-            Plugin.Log("Running Sandling RNG setup.");
-
             // Sandlings are professionals. They need no tutorial :D
             if (GameManager.Instance.InTutorial)
             {
@@ -168,41 +166,43 @@ public class Sandling : CompanionItem
                 return;
             }
 
-            foreach (var room in GameManager.Instance.Dungeon.data.rooms)
+            try
             {
-                room.OnEnemiesCleared += () =>
+                foreach (var room in GameManager.Instance.Dungeon.data.rooms)
                 {
-                    Plugin.Log("OnEnemiesCleared");
-
-                    int sandlingAmount = 0;
-                    foreach (var player in GameManager.Instance.AllPlayers)
+                    room.OnEnemiesCleared += () =>
                     {
-                        sandlingAmount += player.passiveItems.Count(item => item.itemName == sandling.itemName);
-                    }
+                        int sandlingAmount = 0;
+                        foreach (var player in GameManager.Instance.AllPlayers)
+                        {
+                            sandlingAmount += player.passiveItems.Count(item => item.itemName == sandling.itemName);
+                        }
 
-                    Plugin.Log("Total Sandlings on player: " + sandlingAmount);
+                        //Plugin.Log(GameManager.Instance.AllPlayers, (item) => item.ActorName);
+                        //int reduction = GameManager.Instance.AllPlayers.Count(player => player.ActorName == "guide");
+                        //Plugin.Log("Reduction: " + reduction);
 
-                    //Plugin.Log(GameManager.Instance.AllPlayers, (item) => item.ActorName);
-                    //int reduction = GameManager.Instance.AllPlayers.Count(player => player.ActorName == "guide");
-                    //Plugin.Log("Reduction: " + reduction);
+                        int spawnOdds = GetSpawnOdds(stage: sandlingAmount);
 
-                    int spawnOdds = GetSpawnOdds(stage: sandlingAmount);
-                    Plugin.Log($"Processing odds: ({currentOdds + 1}/{spawnOdds})");
+                        // Keep in mind - int range is exclusive! Also 0/9 odd is essentially 1/10.
+                        if (currentOdds >= UnityEngine.Random.Range(0, spawnOdds) && TryGetLandingLocation(room, out Vector2 position))
+                        {
+                            Plugin.Log($"Spawning item (sorry if it is inside the wall :D)");
+                            LootEngine.SpawnItem(sandling.gameObject, position, Vector2.up, 0f);
 
-                    // Keep in mind - int range is exclusive! Also 0/9 odd is essentially 1/10.
-                    if (currentOdds >= UnityEngine.Random.Range(0, spawnOdds) && TryGetLandingLocation(room, out Vector2 position))
-                    {
-                        Plugin.Log($"Spawning item (sorry if it is inside the walls :D)");
-                        LootEngine.SpawnItem(sandling.gameObject, position, Vector2.up, 0f);
-
-                        // Odd reset.
-                        currentOdds = 0;
-                    }
-                    else currentOdds++; // Gives higher odds next roll.
-                };
+                            // Odd reset.
+                            currentOdds = 0;
+                        }
+                        else currentOdds++; // Gives higher odds next roll.
+                    };
+                }
             }
-
-            Plugin.Log("Sandling spawn RNG setup successful!");
+            catch (Exception e)
+            {
+                Plugin.Warning($"Cannot attach sandling spawn events! Sandlings spawn on this level.");
+                Plugin.Warning(e.Message);
+                Plugin.Warning(e.StackTrace);
+            }
         };
     }
 

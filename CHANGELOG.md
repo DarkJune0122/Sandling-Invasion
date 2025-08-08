@@ -4,7 +4,7 @@
 - Item exploit that allows you to get higher odds on getting the next sandling.
 
 # v0.1.3:
-- Update the odds of item appearing: you now have much larger chance to find an extra compas, but chances go down the more of them you have on you. (pending)
+- Update the odds of item appearing: you now have much larger chance to find an extra compas, but chances go down the more of them you have on you.
 
 ### Misc:
 - Updated mod deployment tools.
