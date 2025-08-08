@@ -1,4 +1,5 @@
-﻿using Alexandria.ItemAPI;
+﻿using Alexandria.DungeonAPI;
+using Alexandria.ItemAPI;
 using Dungeonator;
 using Gungeon;
 using System;
@@ -82,14 +83,14 @@ public class Sandling : CompanionItem
         //tk2dSpriteDefinition definition = dogItem.sprite.GetCurrentSpriteDef();
         //definition.texelSize = new Vector2(0.2f, 0.2f);
 
-        int spriteID = SpriteBuilder.AddSpriteToCollection(ItemSpritePath, SpriteBuilder.itemCollection);
-        if (dogItem.sprite is tk2dSprite sprite)
-        {
-            sprite.SetSprite(spriteID);
-            sprite.SortingOrder = 0;
-            sprite.IsPerpendicular = true;
-        }
-        else Plugin.Warning("Dog item has unexpected sprite type.");
+        //int spriteID = SpriteBuilder.AddSpriteToCollection(ItemSpritePath, SpriteBuilder.itemCollection);
+        //if (dogItem.sprite is tk2dSprite sprite)
+        //{
+        //    sprite.SetSprite(spriteID);
+        //    sprite.SortingOrder = 0;
+        //    sprite.IsPerpendicular = true;
+        //}
+        //else Plugin.Warning("Dog item has unexpected sprite type.");
 
         //Plugin.Log(Game.Enemies.Pairs);
 
@@ -97,22 +98,23 @@ public class Sandling : CompanionItem
         //Plugin.Log();
 
         // Overwriting dog's item sprite definition.
-        /*if (Utils.TryFind(dogItem.sprite.Collection.spriteDefinitions, (d) => d.name == "dog_item_001", out var definition))
-        {
-            Texture2D texture = ResourceExtractor.GetTextureFromResource(ItemSpritePath);
-            ETGMod.ReplaceTexture(definition, texture);
-            definition.texelSize = new Vector2(20, 20);
-            definition.boundsDataCenter = new Vector3(10f / 16f, 10f / 16f, 0f); // Half of width/height
-            definition.boundsDataExtents = new Vector3(10f / 16f, 10f / 16f, 0f); // Half of width/height
-            definition.untrimmedBoundsDataCenter = new Vector3(10f / 16f, 10f / 16f, 0f);
-            definition.untrimmedBoundsDataExtents = new Vector3(10f / 16f, 10f / 16f, 0f);
+        Texture2D texture = ResourceExtractor.GetTextureFromResource(ItemSpritePath);
+        tk2dSpriteDefinition definition = dogItem.sprite.GetCurrentSpriteDef();
+        ETGMod.ReplaceTexture(definition, texture);
+        definition.texelSize = new Vector2(17, 17);
+        float halfSize = 8.5f / 16f; // Half of 17 in game units (pixels per unit: 16)
 
-            definition.position0 = new Vector3(0f, 0f, 0f);
-            definition.position1 = new Vector3(1.25f, 0f, 0f);
-            definition.position2 = new Vector3(0f, 1.25f, 0f);
-            definition.position3 = new Vector3(1.25f, 1.25f, 0f);
-        }
-        else Plugin.Warning("Cannot replace dog item!");*/
+        definition.boundsDataCenter = new Vector3(halfSize, halfSize, 0f);
+        definition.boundsDataExtents = new Vector3(halfSize, halfSize, 0f);
+        definition.untrimmedBoundsDataCenter = new Vector3(halfSize, halfSize, 0f);
+        definition.untrimmedBoundsDataExtents = new Vector3(halfSize, halfSize, 0f);
+
+        // Adjust positions based on 17px width/height in world units
+        float worldWidth = 17f / 16f;  // 1.0625
+        definition.position0 = new Vector3(0f, 0f, 0f);
+        definition.position1 = new Vector3(worldWidth, 0f, 0f);
+        definition.position2 = new Vector3(0f, worldWidth, 0f);
+        definition.position3 = new Vector3(worldWidth, worldWidth, 0f);
 
         // Overwriting dog's entity sprite preview.
         //if (dogItem is not CompanionItem companion)
@@ -146,14 +148,15 @@ public class Sandling : CompanionItem
     /// .                                               Spawn Behavior
     /// .
     /// ===     ===     ===     ===    ===  == =  -                        -  = ==  ===    ===     ===     ===     ===]]>
-    private static readonly int[] DefaultOdds = [10, 50, 240, 480, 720];
+    private static readonly int[] DefaultOdds = [10, 40, 100, 240, 480];
     private static int currentOdds = 0; // Note: 0 - is a valid odd. Odds go not from [1 - 10] but [0 - 9]
 
 
     protected static void SetupSpawn()
     {
         PickupObject sandling = Game.Items.Get("gungeon:dog");
-        GameManager.Instance.OnNewLevelFullyLoaded += () =>
+        
+        DungeonHooks.OnPostDungeonGeneration += () =>
         {
             Plugin.Log("Running Sandling RNG setup.");
 
@@ -167,14 +170,6 @@ public class Sandling : CompanionItem
 
             foreach (var room in GameManager.Instance.Dungeon.data.rooms)
             {
-                room.PreEnemiesCleared += () =>
-                {
-                    Plugin.Log("PRE CLEAR");
-                    Plugin.Log("Amount: " + room.activeEnemies.Count);
-                    Plugin.Log(room.activeEnemies, (enemy) => enemy.CenterPosition.ToString());
-                    return true;
-                };
-
                 room.OnEnemiesCleared += () =>
                 {
                     Plugin.Log("OnEnemiesCleared");
@@ -182,14 +177,14 @@ public class Sandling : CompanionItem
                     int sandlingAmount = 0;
                     foreach (var player in GameManager.Instance.AllPlayers)
                     {
-                        Plugin.Log(player.passiveItems, (item) => item.itemName);
-                        sandlingAmount += player.passiveItems.Count(item => item == sandling);
+                        sandlingAmount += player.passiveItems.Count(item => item.itemName == sandling.itemName);
                     }
 
-                    Plugin.Log("Total Sandlings: " + sandlingAmount);
-                    Plugin.Log(GameManager.Instance.AllPlayers, (item) => item.ActorName);
-                    int reduction = GameManager.Instance.AllPlayers.Count(player => player.ActorName == "guide");
-                    Plugin.Log("Reduction: " + reduction);
+                    Plugin.Log("Total Sandlings on player: " + sandlingAmount);
+
+                    //Plugin.Log(GameManager.Instance.AllPlayers, (item) => item.ActorName);
+                    //int reduction = GameManager.Instance.AllPlayers.Count(player => player.ActorName == "guide");
+                    //Plugin.Log("Reduction: " + reduction);
 
                     int spawnOdds = GetSpawnOdds(stage: sandlingAmount);
                     Plugin.Log($"Processing odds: ({currentOdds + 1}/{spawnOdds})");
@@ -197,6 +192,7 @@ public class Sandling : CompanionItem
                     // Keep in mind - int range is exclusive! Also 0/9 odd is essentially 1/10.
                     if (currentOdds >= UnityEngine.Random.Range(0, spawnOdds) && TryGetLandingLocation(room, out Vector2 position))
                     {
+                        Plugin.Log($"Spawning item (sorry if it is inside the walls :D)");
                         LootEngine.SpawnItem(sandling.gameObject, position, Vector2.up, 0f);
 
                         // Odd reset.
@@ -212,7 +208,6 @@ public class Sandling : CompanionItem
 
     protected static int GetSpawnOdds(int stage)
     {
-        return 1; // Debugging - 100 chance.
         if (stage < 0)
         {
             return DefaultOdds[0];
@@ -325,15 +320,15 @@ public class Sandling : CompanionItem
     /// .                                               Public Methods
     /// .
     /// ===     ===     ===     ===    ===  == =  -                        -  = ==  ===    ===     ===     ===     ===]]>
-    public override void Pickup(PlayerController player)
-    {
-        base.Pickup(player);
-        Plugin.Log($"Player picked up {DisplayName}");
-    }
+    //public override void Pickup(PlayerController player)
+    //{
+    //    base.Pickup(player);
+    //    Plugin.Log($"Player picked up {DisplayName}");
+    //}
 
-    public override void DisableEffect(PlayerController player)
-    {
-        // TODO: Add full-screen no-respect warning.
-        Plugin.Log($"Player dropped or got rid of {DisplayName}! NO RESPECT!");
-    }
+    //public override void DisableEffect(PlayerController player)
+    //{
+    //    // TODO: Add full-screen no-respect warning.
+    //    Plugin.Log($"Player dropped or got rid of {DisplayName}! NO RESPECT!");
+    //}
 }
