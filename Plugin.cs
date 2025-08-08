@@ -3,6 +3,7 @@ using Gungeon;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
@@ -17,7 +18,7 @@ namespace SandlingInvasion
         public const string GUID = "sandlings-united.etg.sandling-invasion";
         public const string NAME = "Sandling Invasion!";
         public const string API = "SandlingAPI";
-        public const string VERSION = "0.1.2";
+        public const string VERSION = "0.1.3";
         public const string TEXT_COLOR = "#FFD97F";
 
 
@@ -49,7 +50,7 @@ namespace SandlingInvasion
         {
             try
             {
-                RegisterAll(g);
+                RegisterAll();
             }
             catch (Exception e)
             {
@@ -77,12 +78,12 @@ namespace SandlingInvasion
         /// .                                               Static Methods
         /// .
         /// ===     ===     ===     ===    ===  == =  -                        -  = ==  ===    ===     ===     ===     ===]]>
-        public static void RegisterAll(GameManager manager)
+        public static void RegisterAll()
         {
             if (Initialized) return;
 
             // Registers items:
-            Sandling.Register(manager);
+            Sandling.Register();
 
             // Should it be moved to the beginning of the registration?
             Initialized = true;
@@ -117,6 +118,15 @@ namespace SandlingInvasion
             }
         }
 
+        public static void Log<T>(T[] values, string color = "#FFFFFF") => Log(values, v => v.ToStringSafe(), color);
+        public static void Log<T>(T[] values, Func<T, string> func, string color = "#FFFFFF")
+        {
+            for (int i = 0; i < values.Length; i++)
+            {
+                Log(func.Invoke(values[i]), color);
+            }
+        }
+
         public static void Log(object obj, string color = "#FFFFFF") => Log(obj.ToStringSafe(), color);
         public static void Log(string text, string color = "#FFFFFF")
         {
@@ -125,10 +135,42 @@ namespace SandlingInvasion
                 foreach (var line in text.Split(SplitSeparators, StringSplitOptions.RemoveEmptyEntries))
                 {
                     if (string.IsNullOrEmpty(line)) continue;
-                    else ETGModConsole.Log($"<color={color}>{line}</color>");
+                    else ETGModConsole.Log($"[SI] <color={color}>{line}</color>");
                 }
             }
-            else ETGModConsole.Log($"<color={color}>{text}</color>");
+            else ETGModConsole.Log($"[SI] <color={color}>{text}</color>");
+        }
+
+        /// <summary>
+        /// Logs info from all fields of the object.
+        /// </summary>
+        /// <remarks>
+        /// If <paramref name="type"/> is provided - should be own type of type of on of the base types.
+        /// </remarks>
+        /// <param name="obj">Object to debug.</param>
+        /// <param name="type">Type of which <see cref="FieldInfo"/>s to reference and use.</param>
+        public static void LogFields(object obj, Type type = null)
+        {
+            type ??= obj.GetType();
+            FieldInfo[] fields = type.GetFields(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.DeclaredOnly);
+
+            Log($"Logging fields of type: {type.Name}");
+            foreach (var field in fields)
+            {
+                object value = field.GetValue(obj);
+                Log($"{field.Name} = {FormatValue(value)}");
+            }
+        }
+
+        private static string FormatValue(object value)
+        {
+            if (value == null) return "null";
+            if (value is Array array)
+            {
+                return $"[{array.Length} items]";
+            }
+
+            return value.ToString();
         }
 
 
@@ -155,6 +197,15 @@ namespace SandlingInvasion
             }
         }
 
+        public static void Warning<T>(T[] values) => Warning(values, v => v.ToStringSafe());
+        public static void Warning<T>(T[] values, Func<T, string> func)
+        {
+            for (int i = 0; i < values.Length; i++)
+            {
+                Log(func.Invoke(values[i]));
+            }
+        }
+
         public static void Warning(object obj) => Warning(obj.ToStringSafe());
         public static void Warning(string text)
         {
@@ -163,10 +214,10 @@ namespace SandlingInvasion
                 foreach (var line in text.Split(SplitSeparators, StringSplitOptions.RemoveEmptyEntries))
                 {
                     if (string.IsNullOrEmpty(line)) continue;
-                    else ETGModConsole.Log($"<color={WarningColor}>Warning: {line}</color>");
+                    else ETGModConsole.Log($"[SI] <color={WarningColor}>Warning: {line}</color>");
                 }
             }
-            else ETGModConsole.Log($"<color={WarningColor}>Warning: {text}</color>");
+            else ETGModConsole.Log($"[SI] <color={WarningColor}>Warning: {text}</color>");
         }
 
 
@@ -203,12 +254,12 @@ namespace SandlingInvasion
                 foreach (var line in text.Split(SplitSeparators, StringSplitOptions.RemoveEmptyEntries))
                 {
                     if (string.IsNullOrEmpty(line)) continue;
-                    ETGModConsole.Log($"[{counter}] <color={color}>{line}</color>");
+                    ETGModConsole.Log($"[SI] [{counter}] <color={color}>{line}</color>");
                 }
             }
             else
             {
-                ETGModConsole.Log($"[{counter}] <color={color}>{text}</color>");
+                ETGModConsole.Log($"[SI] [{counter}] <color={color}>{text}</color>");
             }
 
             counters[key] = counter;

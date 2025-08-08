@@ -1,14 +1,9 @@
-﻿using Alexandria.CharacterAPI;
-using Alexandria.ItemAPI;
-using Alexandria.TranslationAPI;
+﻿using Alexandria.ItemAPI;
+using Dungeonator;
 using Gungeon;
-using MonoMod.RuntimeDetour;
-using System.Collections;
-using System.IO;
+using System;
 using System.Linq;
-using System.Runtime;
 using UnityEngine;
-using static SpawnEnemyOnDeath;
 
 namespace SandlingInvasion;
 
@@ -25,6 +20,9 @@ public class Sandling : CompanionItem
         "A curious creature, that came from a realm of endless sands.\n\n" +
         "How is he ended-up here? Where is he going? What is he looking for?\n\n" +
         "A mysterious destination that one can dare to find, remains secret until reached.";
+
+    public const string InternalItemName = "sandling_compass_001";
+    public const string InternalFullItemName = InternalItemName + ".png";
 
 
 
@@ -46,7 +44,7 @@ public class Sandling : CompanionItem
     /// .                                               Static Methods
     /// .
     /// ===     ===     ===     ===    ===  == =  -                        -  = ==  ===    ===     ===     ===     ===]]>
-    public static void Register(GameManager manager)
+    public static void Register()
     {
         // Creates the item.
         const string ItemSpritePath = $"{nameof(SandlingInvasion)}/Resources/dog_item_001.png";
@@ -64,13 +62,34 @@ public class Sandling : CompanionItem
         //ItemBuilder.AddPassiveStatModifier(item, PlayerStats.StatType.Coolness, 1);
         //item.quality = ItemQuality.C;
 
-        //// Replaces a built-in Dog item in character's inventory.
+        //GameManager.Instance.OnNewLevelFullyLoaded += () =>
+        //{
+        //    Vector2 position = GameManager.Instance.PrimaryPlayer.CenterPosition;
+        //    LootEngine.SpawnItem(item.gameObject, position, Vector2.up, 0f);
+        //};
+
+        // Replaces a built-in Dog item in character's inventory.
         PickupObject dogItem = Game.Items.Get("gungeon:dog");
         dogItem.SetName(ItemName);
         dogItem.SetShortDescription(ShortDescription);
         dogItem.SetLongDescription(LongDescription);
+        //Plugin.Log();
+        //Plugin.LogFields(item.sprite.GetCurrentSpriteDef());
+        //Plugin.Log(item.sprite.GetCurrentSpriteDef().uvs);
+        //Plugin.Log();
+        //Plugin.LogFields(dogItem.sprite.GetCurrentSpriteDef());
+        //Plugin.Log(dogItem.sprite.GetCurrentSpriteDef().uvs);
+        //tk2dSpriteDefinition definition = dogItem.sprite.GetCurrentSpriteDef();
+        //definition.texelSize = new Vector2(0.2f, 0.2f);
 
-
+        int spriteID = SpriteBuilder.AddSpriteToCollection(ItemSpritePath, SpriteBuilder.itemCollection);
+        if (dogItem.sprite is tk2dSprite sprite)
+        {
+            sprite.SetSprite(spriteID);
+            sprite.SortingOrder = 0;
+            sprite.IsPerpendicular = true;
+        }
+        else Plugin.Warning("Dog item has unexpected sprite type.");
 
         //Plugin.Log(Game.Enemies.Pairs);
 
@@ -78,7 +97,7 @@ public class Sandling : CompanionItem
         //Plugin.Log();
 
         // Overwriting dog's item sprite definition.
-        if (Utils.TryFind(dogItem.sprite.Collection.spriteDefinitions, (d) => d.name == "dog_item_001", out var definition))
+        /*if (Utils.TryFind(dogItem.sprite.Collection.spriteDefinitions, (d) => d.name == "dog_item_001", out var definition))
         {
             Texture2D texture = ResourceExtractor.GetTextureFromResource(ItemSpritePath);
             ETGMod.ReplaceTexture(definition, texture);
@@ -93,7 +112,7 @@ public class Sandling : CompanionItem
             definition.position2 = new Vector3(0f, 1.25f, 0f);
             definition.position3 = new Vector3(1.25f, 1.25f, 0f);
         }
-        else Plugin.Warning("Cannot replace dog item!");
+        else Plugin.Warning("Cannot replace dog item!");*/
 
         // Overwriting dog's entity sprite preview.
         //if (dogItem is not CompanionItem companion)
@@ -115,7 +134,7 @@ public class Sandling : CompanionItem
         //}
         //else Plugin.Warning("Cannot locate a dog itself! Sniff it out!");
 
-        SetupSpawn(manager);
+        SetupSpawn();
     }
 
 
@@ -127,25 +146,175 @@ public class Sandling : CompanionItem
     /// .                                               Spawn Behavior
     /// .
     /// ===     ===     ===     ===    ===  == =  -                        -  = ==  ===    ===     ===     ===     ===]]>
-    protected static void SetupSpawn(GameManager manager)
+    private static readonly int[] DefaultOdds = [10, 50, 240, 480, 720];
+    private static int currentOdds = 0; // Note: 0 - is a valid odd. Odds go not from [1 - 10] but [0 - 9]
+
+
+    protected static void SetupSpawn()
     {
-        PickupObject item = Game.Items.Get("gungeon:dog");
-        manager.OnNewLevelFullyLoaded += () =>
+        PickupObject sandling = Game.Items.Get("gungeon:dog");
+        GameManager.Instance.OnNewLevelFullyLoaded += () =>
         {
-            GameManager manager = GameManager.Instance;
-            foreach (var room in manager.Dungeon.data.rooms)
+            Plugin.Log("Running Sandling RNG setup.");
+
+            // Sandlings are professionals. They need no tutorial :D
+            if (GameManager.Instance.InTutorial)
             {
-                // Temporary solution.
-                if (Random.value <= 0.1f)
-                {
-                    room.OnEnemiesCleared += () =>
-                    {
-                        LootEngine.SpawnItem(item.gameObject, room.area.UnitCenter, Vector2.up, 0f);
-                    };
-                }
+                currentOdds = 0;
+                Plugin.Log("No Sandlings in a tutorial! We need no tutorial!");
+                return;
             }
+
+            foreach (var room in GameManager.Instance.Dungeon.data.rooms)
+            {
+                room.PreEnemiesCleared += () =>
+                {
+                    Plugin.Log("PRE CLEAR");
+                    Plugin.Log("Amount: " + room.activeEnemies.Count);
+                    Plugin.Log(room.activeEnemies, (enemy) => enemy.CenterPosition.ToString());
+                    return true;
+                };
+
+                room.OnEnemiesCleared += () =>
+                {
+                    Plugin.Log("OnEnemiesCleared");
+
+                    int sandlingAmount = 0;
+                    foreach (var player in GameManager.Instance.AllPlayers)
+                    {
+                        Plugin.Log(player.passiveItems, (item) => item.itemName);
+                        sandlingAmount += player.passiveItems.Count(item => item == sandling);
+                    }
+
+                    Plugin.Log("Total Sandlings: " + sandlingAmount);
+                    Plugin.Log(GameManager.Instance.AllPlayers, (item) => item.ActorName);
+                    int reduction = GameManager.Instance.AllPlayers.Count(player => player.ActorName == "guide");
+                    Plugin.Log("Reduction: " + reduction);
+
+                    int spawnOdds = GetSpawnOdds(stage: sandlingAmount);
+                    Plugin.Log($"Processing odds: ({currentOdds + 1}/{spawnOdds})");
+
+                    // Keep in mind - int range is exclusive! Also 0/9 odd is essentially 1/10.
+                    if (currentOdds >= UnityEngine.Random.Range(0, spawnOdds) && TryGetLandingLocation(room, out Vector2 position))
+                    {
+                        LootEngine.SpawnItem(sandling.gameObject, position, Vector2.up, 0f);
+
+                        // Odd reset.
+                        currentOdds = 0;
+                    }
+                    else currentOdds++; // Gives higher odds next roll.
+                };
+            }
+
+            Plugin.Log("Sandling spawn RNG setup successful!");
         };
     }
+
+    protected static int GetSpawnOdds(int stage)
+    {
+        return 1; // Debugging - 100 chance.
+        if (stage < 0)
+        {
+            return DefaultOdds[0];
+        }
+        else if (stage < DefaultOdds.Length)
+        {
+            return DefaultOdds[stage];
+        }
+        else if (DefaultOdds.Length >= 2)
+        {
+            int oddBase = DefaultOdds[DefaultOdds.Length - 1];
+            int oddDelta = (oddBase - DefaultOdds[DefaultOdds.Length - 2]);
+            return oddBase + oddDelta * (stage - DefaultOdds.Length + 1);
+        }
+        else
+        {
+            return DefaultOdds[DefaultOdds.Length - 1] * (stage - DefaultOdds.Length + 1);
+        }
+    }
+
+    /// <summary>
+    /// 
+    /// </summary>
+    /// <param name="room"></param>
+    /// <param name="position"></param>
+    /// <returns>Whether position was found.</returns>
+    protected static bool TryGetLandingLocation(RoomHandler room, out Vector2 position)
+    {
+        position = room.area.Center;
+        return true; // Temporary solution, because otherwise everything is VERY buggy.
+
+        if (room.Cells == null || room.Cells.Count == 0)
+        {
+            position = default;
+            return false;
+        }
+
+        try
+        {
+            DungeonData dungeon = GameManager.Instance.Dungeon.data;
+
+            // Defines min-max positions of the room.
+            int xMin = int.MaxValue, yMin = int.MaxValue, xMax = int.MinValue, yMax = int.MinValue;
+            foreach (var cell in room.Cells)
+            {
+                xMin = Mathf.Min(xMin, cell.x);
+                xMax = Mathf.Min(xMax, cell.x);
+                yMin = Mathf.Min(yMin, cell.y);
+                yMax = Mathf.Min(yMax, cell.y);
+            }
+
+            float xCenter = (float)xMax - xMin;
+            float yCenter = (float)yMax - yMin;
+
+            // Looks for a valid cell.
+            float lastDistance = float.PositiveInfinity;
+            IntVector2 centerCell = default;
+            foreach (var cell in room.Cells)
+            {
+                float xDelta = cell.x - xCenter;
+                float yDelta = cell.y - yCenter;
+                float sqrDistance = xDelta * xDelta + yDelta * yDelta;
+                Plugin.Log(sqrDistance);
+                if (sqrDistance >= lastDistance)
+                {
+                    continue;
+                }
+
+                CellData data = dungeon[cell.x, cell.y];
+                Plugin.Log($"Data: " + data);
+                Plugin.Log($"Data.type: " + data.type);
+                if (data != null && data.type == CellType.FLOOR) // Accepts pit-only - any flags will be removed.
+                {
+                    // Cell is valid. Go for spawning.
+                    lastDistance = sqrDistance;
+                    centerCell = cell;
+                }
+            }
+
+            Plugin.Log($"Lowest distance recorded: {lastDistance}");
+            if (lastDistance > 1_000_000f) // Likely bugged out.
+            {
+                position = room.area.Center;
+                return true;
+            }
+            else
+            {
+                position = centerCell.ToVector2() + new Vector2(0.5f, 0.5f);
+                return true;
+            }
+        }
+        catch (Exception e)
+        {
+            Plugin.Warning($"Cannot locate a room center without issues!");
+            Plugin.Warning(e.Message);
+            Plugin.Warning(e.StackTrace);
+        }
+
+        position = default;
+        return false;
+    }
+
 
 
 
@@ -156,22 +325,15 @@ public class Sandling : CompanionItem
     /// .                                               Public Methods
     /// .
     /// ===     ===     ===     ===    ===  == =  -                        -  = ==  ===    ===     ===     ===     ===]]>
-        //public override void Pickup(PlayerController player)
-        //{
-        //    base.Pickup(player);
-        //    Plugin.Log($"Player picked up {DisplayName}");
-        //}
+    public override void Pickup(PlayerController player)
+    {
+        base.Pickup(player);
+        Plugin.Log($"Player picked up {DisplayName}");
+    }
 
-        //public override void DisableEffect(PlayerController player)
-        //{
-        //    // TODO: Add full-screen no-respect warning.
-        //    Plugin.Log($"Player dropped or got rid of {DisplayName}! NO RESPECT!");
-        //}
-
-        //public override void Update()
-        //{
-        //    base.Update();
-        //    Plugin.Log("Update");
-        //    Plugin.Log(FindObjectsOfType<PlayerController>());
-        //}
+    public override void DisableEffect(PlayerController player)
+    {
+        // TODO: Add full-screen no-respect warning.
+        Plugin.Log($"Player dropped or got rid of {DisplayName}! NO RESPECT!");
+    }
 }

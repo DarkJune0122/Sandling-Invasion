@@ -6,7 +6,7 @@ This is a community mod, specially made for Konoobi, VTuber!
 We sincerely hope that you will enjoy playing with this mod!
 <sup><sub><i>
 And that she will be too busy to invade "No kobi" channel again.
-</sub></sup></i>.
+</sub></sup></i>
 
 ## Content:
 - Sandling as **trustworthy** companion!
@@ -14,6 +14,6 @@ And that she will be too busy to invade "No kobi" channel again.
 
 We hope you enjoy!
 
-## Contributors (Discord):
-- Banjo (banjorise)
-- DarkJune (darkjune)
+## Contributors:
+- Banjo ([@BanjoStream - Twitter](https://x.com/BanjoStream))
+- DarkJune (Discord: darkjune)
