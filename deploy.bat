@@ -1,9 +1,13 @@
-@echo on
+@echo off
 
 set "root=%cd%"
 set "deploy=%root%\deploy"
 set "file=SandlingInvasion.dll"
 set "zip=SandlingInvasion.zip"
+
+:: Where to auto-deploy mod for testing.
+set "modFolder=C:\Users\Dark\AppData\Roaming\r2modmanPlus-local\ETG\profiles\Default\BepInEx\plugins"
+set "modName=SandlingInvasion"
 
 :: Delete deploy folder if it exists
 if exist "%deploy%" (
@@ -24,21 +28,26 @@ xcopy /y "%root%\CHANGELOG.md" "%deploy%"
 xcopy /y "%root%\icon.png" "%deploy%"
 xcopy /y "%root%\manifest.json" "%deploy%"
 xcopy /y "%root%\bin\Debug\%file%" "%deploy%"
-call "%root%\move.bat" -target "%root%\plugin" -destination "%deploy%"
+call "%root%\move.bat" -target "%root%\plugins" -destination "%deploy%\plugins"
 
 :: WinRAR's "a" = add files to archive
 :: -afzip = force ZIP format (default is RAR)
 :: -ep1 = exclude base folder, include only contents
 :: -r = recursive
-winrar a -afzip -ep1 -r "%zip%" "%deploy%\*"
+start "" /wait winrar a -afzip -ep1 -r "%root%\%zip%" "%deploy%\*"
 
 :: Test mod deployment.
 if exist "C:\Users\Dark" (
 	:: Auto-deploy zip as an internal mod for testing.
-	if exist "C:\Users\Dark\AppData\Roaming\r2modmanPlus-local\ETG\profiles\Default\BepInEx\plugins\SandlingInvasion" (
-		rmdir /s /q "C:\Users\Dark\AppData\Roaming\r2modmanPlus-local\ETG\profiles\Default\BepInEx\plugins\SandlingInvasion"
+	if exist "%modFolder%\%modName%" (
+		rmdir /s /q "%modFolder%\%modName%"
 	)
 	
-	mkdir "C:\Users\Dark\AppData\Roaming\r2modmanPlus-local\ETG\profiles\Default\BepInEx\plugins\SandlingInvasion"
-	winrar x -r -o+ "%root%\%zip%" "C:\Users\Dark\AppData\Roaming\r2modmanPlus-local\ETG\profiles\Default\BepInEx\plugins\SandlingInvasion"
+	mkdir "%modFolder%\%modName%"
+	start "" /wait winrar x -r -o+ "%root%\%zip%" "%modFolder%\%modName%"
+	
+	if exist "%modFolder%\%modName%\plugins" (
+		xcopy "%modFolder%\%modName%\plugins\*" "%modFolder%\%modName%" /E /H /Y
+		rmdir /s /q "%modFolder%\%modName%\plugins"
+	)
 )

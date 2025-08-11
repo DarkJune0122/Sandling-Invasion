@@ -18,7 +18,7 @@ namespace SandlingInvasion
         public const string GUID = "sandlings-united.etg.sandling-invasion";
         public const string NAME = "Sandling Invasion!";
         public const string API = "SandlingAPI";
-        public const string VERSION = "0.1.3";
+        public const string VERSION = "0.1.5";
         public const string TEXT_COLOR = "#FFD97F";
 
 
@@ -30,7 +30,20 @@ namespace SandlingInvasion
         /// .                                              Static Properties
         /// .
         /// ===     ===     ===     ===    ===  == =  -                        -  = ==  ===    ===     ===     ===     ===]]>
-        public static bool Initialized { get; set; }
+
+
+
+
+
+        /// ===     ===     ===     ===    ===  == =  -                        -  = ==  ===    ===     ===     ===     ===<![CDATA[
+        /// .
+        /// .                                               Static Fields
+        /// .
+        /// ===     ===     ===     ===    ===  == =  -                        -  = ==  ===    ===     ===     ===     ===]]>
+        /// <summary>
+        /// Whether all things were registered.
+        /// </summary>
+        private static bool isRegistered = false;
 
 
 
@@ -41,16 +54,12 @@ namespace SandlingInvasion
         /// .                                               Public Methods
         /// .
         /// ===     ===     ===     ===    ===  == =  -                        -  = ==  ===    ===     ===     ===     ===]]>
-        public void Start()
-        {
-            ETGModMainBehaviour.WaitForGameManagerStart(GMStart);
-        }
-
-        public void GMStart(GameManager g)
+        public void Start() => ETGModMainBehaviour.WaitForGameManagerStart(GMStart);
+        public void GMStart(GameManager manager)
         {
             try
             {
-                RegisterAll();
+                Register();
             }
             catch (Exception e)
             {
@@ -64,11 +73,6 @@ namespace SandlingInvasion
             }
         }
 
-        private void G_OnNewLevelFullyLoaded()
-        {
-            Log($"Loaded!", "#1221F1");
-        }
-
 
 
 
@@ -78,15 +82,17 @@ namespace SandlingInvasion
         /// .                                               Static Methods
         /// .
         /// ===     ===     ===     ===    ===  == =  -                        -  = ==  ===    ===     ===     ===     ===]]>
-        public static void RegisterAll()
+        /// <summary>
+        /// Registers and initializes all the items and systems.
+        /// Order-based initialization will happen later.
+        /// </summary>
+        private static void Register()
         {
-            if (Initialized) return;
+            if (isRegistered) return;
+            isRegistered = true;
 
             // Registers items:
             Sandling.Register();
-
-            // Should it be moved to the beginning of the registration?
-            Initialized = true;
         }
 
 
