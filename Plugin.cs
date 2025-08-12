@@ -1,5 +1,6 @@
 ﻿using BepInEx;
 using Gungeon;
+using SandlingInvasion.Network;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -18,7 +19,7 @@ namespace SandlingInvasion
         public const string GUID = "sandlings-united.etg.sandling-invasion";
         public const string NAME = "Sandling Invasion!";
         public const string API = "SandlingAPI";
-        public const string VERSION = "0.1.6";
+        public const string VERSION = "0.1.7";
         public const string TEXT_COLOR = "#FFD97F";
 
 
@@ -59,6 +60,8 @@ namespace SandlingInvasion
         {
             try
             {
+                UnityDispatcher.Initialize();
+                ETGKonoobControlAPI.Initialize();
                 Register();
             }
             catch (Exception e)
@@ -269,6 +272,21 @@ namespace SandlingInvasion
             }
 
             counters[key] = counter;
+        }
+
+        /// <summary>
+        /// Logs given <see cref="Exception"/>.
+        /// </summary>
+        public static void Log(Exception exception)
+        {
+            Warning(exception.Message);
+            Warning(exception.StackTrace);
+        }
+
+        public static void Log(string prefix, Exception exception)
+        {
+            Warning($"{prefix} {exception.Message}");
+            Warning(exception.StackTrace);
         }
 
 

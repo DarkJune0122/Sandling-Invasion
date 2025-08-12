@@ -40,9 +40,12 @@
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="ExamplePassive.cs" />
+    <Compile Include="Network\NetworkPipes.cs" />
+    <Compile Include="Network\UnityDispatcher.cs" />
     <Compile Include="Plugin.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Sandling.cs" />
+    <Compile Include="Network\ETGKonoobControlAPI.cs" />
     <Compile Include="Utils.cs" />
   </ItemGroup>
   <ItemGroup>
