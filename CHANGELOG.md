@@ -3,6 +3,10 @@
 - Item dropping might not be supported in multiplayer context.
 
 
+# v0.1.6:
+- ACTUALLY removed "MANUAL INSTALL ONLY" notice.
+
+
 
 # v0.1.5:
 - Removed "MANUAL INSTALL ONLY" notice.
