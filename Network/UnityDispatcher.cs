@@ -2,8 +2,14 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-namespace SandlingInvasion.Network;
-
+/// <summary>
+/// Dispatches thread events to the main thread.
+/// </summary>
+/// <remarks>
+/// Any calls to a dispatcher will ALWAYS delay action by one frame.
+/// </remarks>
+[System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1050:Declare types in namespaces", Justification = "For easier distribution.")]
+[System.Diagnostics.CodeAnalysis.SuppressMessage("CodeQuality", "IDE0079:Remove unnecessary suppression", Justification = "To seal the one above")]
 public sealed class UnityDispatcher : MonoBehaviour
 {
     /// ===     ===     ===     ===    ===  == =  -                        -  = ==  ===    ===     ===     ===     ===<![CDATA[
@@ -33,6 +39,10 @@ public sealed class UnityDispatcher : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// Delays action by one frame.
+    /// </summary>
+    /// <param name="action"></param>
     public static void Dispatch(Action action)
     {
         lock (queue)
@@ -53,13 +63,18 @@ public sealed class UnityDispatcher : MonoBehaviour
     public void Update()
     {
         if (queue.Count == 0) return;
+
+        Action[] callbacks;
         lock (queue)
         {
-            do
-            {
-                queue.Dequeue()?.Invoke();
-            }
-            while (queue.Count > 0);
+            if (queue.Count == 0) return;
+            callbacks = [.. queue];
+            queue.Clear();
+        }
+
+        for (int i = 0; i < callbacks.Length; i++)
+        {
+            callbacks[i]?.Invoke();
         }
     }
 }

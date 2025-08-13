@@ -60,8 +60,7 @@ namespace SandlingInvasion
         {
             try
             {
-                UnityDispatcher.Initialize();
-                ETGKonoobControlAPI.Initialize();
+                UnityKonoobControlAPI.Initialize();
                 Register();
             }
             catch (Exception e)

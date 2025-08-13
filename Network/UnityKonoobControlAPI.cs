@@ -1,7 +1,4 @@
-﻿using Alexandria.PrefabAPI;
-using SandlingInvasion;
-using SandlingInvasion.Network;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.IO;
 using System.IO.Pipes;
@@ -13,7 +10,7 @@ using System.Threading;
 /// <![CDATA[v0.0.1]]>
 [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1050:Declare types in namespaces", Justification = "For easier distribution.")]
 [System.Diagnostics.CodeAnalysis.SuppressMessage("CodeQuality", "IDE0079:Remove unnecessary suppression", Justification = "To seal the one above")]
-public static class ETGKonoobControlAPI
+public static partial class UnityKonoobControlAPI
 {
     /// ===     ===     ===     ===    ===  == =  -                        -  = ==  ===    ===     ===     ===     ===<![CDATA[
     /// .
@@ -25,6 +22,14 @@ public static class ETGKonoobControlAPI
     /// </summary>
     public static event Action<string> OnMessageReceived;
 
+    /// <summary>
+    /// Default Logger to be used for built-in reports.
+    /// </summary>
+    public static Action<object> Logger
+    {
+        get => m_Logger; set => m_Logger = value ?? Console.WriteLine;
+    }
+
 
 
 
@@ -35,6 +40,7 @@ public static class ETGKonoobControlAPI
     /// .
     /// ===     ===     ===     ===    ===  == =  -                        -  = ==  ===    ===     ===     ===     ===]]>
     private static readonly Dictionary<string, Action> callbacks = [];
+    private static Action<object> m_Logger = Console.WriteLine;
     private static bool isInitialized = false;
 
 
@@ -46,12 +52,19 @@ public static class ETGKonoobControlAPI
     /// .                                               Static Methods
     /// .
     /// ===     ===     ===     ===    ===  == =  -                        -  = ==  ===    ===     ===     ===     ===]]>
+    /// <summary>
+    /// Initializes <see cref="UnityKonoobControlAPI"/> and <see cref="UnityDispatcher"/>.
+    /// </summary>
+    /// <remarks>
+    /// 
+    /// </remarks>
     public static void Initialize()
     {
         if (isInitialized) return;
         isInitialized = true;
+        UnityDispatcher.Initialize();
         Worker.Initialize();
-        Listen(NetworkPipes.Messages.TestMessage, () => Plugin.Log($"{Worker.LogPrefix} Test message received!"));
+        Listen(NetworkPipes.Messages.TestMessage, () => Logger($"{Worker.LogPrefix} Test message received!"));
     }
 
     public static void Listen(string key, Action action)
@@ -155,7 +168,7 @@ public static class ETGKonoobControlAPI
                 }
                 catch (IOException)
                 {
-                    Plugin.Log($"{LogPrefix} Connection lost.");
+                    Logger($"{LogPrefix} Connection with Konoob Control Panel lost.");
                 }
                 catch
                 {
