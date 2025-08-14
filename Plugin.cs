@@ -1,6 +1,5 @@
 ﻿using BepInEx;
 using Gungeon;
-using SandlingInvasion.Network;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -60,7 +59,7 @@ namespace SandlingInvasion
         {
             try
             {
-                UnityKonoobControlAPI.Initialize();
+                ClientPipe.Initialize<ETGPipeAPI>();
                 Register();
             }
             catch (Exception e)
@@ -108,6 +107,7 @@ namespace SandlingInvasion
         /// ===     ===     ===     ===    ===  == =  -                        -  = ==  ===    ===     ===     ===     ===]]>
         private static readonly char[] SplitSeparators = ['\n', '\r'];
         public static void Log() => Log(string.Empty);
+        public static void Log(object value) => Log(value.ToString());
         public static void Log<T>(ICollection<T> values, string color = "#FFFFFF") => Log(values, v => v.ToStringSafe(), color);
         public static void Log<T>(ICollection<T> values, Func<T, string> func, string color = "#FFFFFF")
         {

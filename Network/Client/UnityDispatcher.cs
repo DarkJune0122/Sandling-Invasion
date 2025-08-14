@@ -17,6 +17,22 @@ public sealed class UnityDispatcher : MonoBehaviour
     /// .                                              Static Properties
     /// .
     /// ===     ===     ===     ===    ===  == =  -                        -  = ==  ===    ===     ===     ===     ===]]>
+    public static Action<Exception> ExceptionLogger
+    {
+        get => m_ExceptionLogger;
+        set => m_ExceptionLogger = value ?? DefaultLogger;
+    }
+
+
+
+
+
+    /// ===     ===     ===     ===    ===  == =  -                        -  = ==  ===    ===     ===     ===     ===<![CDATA[
+    /// .
+    /// .                                              Static Properties
+    /// .
+    /// ===     ===     ===     ===    ===  == =  -                        -  = ==  ===    ===     ===     ===     ===]]>
+    private static Action<Exception> m_ExceptionLogger = DefaultLogger;
     private static readonly Queue<Action> queue = new();
     private static UnityDispatcher instance = null;
 
@@ -51,6 +67,11 @@ public sealed class UnityDispatcher : MonoBehaviour
         }
     }
 
+    private static void DefaultLogger(Exception exception)
+    {
+        Console.WriteLine($"Error in UnityDispatcher: {exception.Message}\n{exception.StackTrace}");
+    }
+
 
 
 
@@ -74,7 +95,14 @@ public sealed class UnityDispatcher : MonoBehaviour
 
         for (int i = 0; i < callbacks.Length; i++)
         {
-            callbacks[i]?.Invoke();
+            try
+            {
+                callbacks[i]?.Invoke();
+            }
+            catch (Exception ex)
+            {
+                ExceptionLogger.Invoke(ex);
+            }
         }
     }
 }
