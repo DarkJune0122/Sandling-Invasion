@@ -1,9 +1,4 @@
 ﻿using SandlingInvasion;
-using System;
-using System.Collections.Generic;
-using System.IO;
-using System.IO.Pipes;
-using System.Threading;
 
 /// <summary>
 /// Gives functions to work with Konoob Control Panel messages in Enter the Gungeon.
@@ -19,7 +14,7 @@ public sealed class ETGPipeAPI : ClientPipe
     /// .
     /// ===     ===     ===     ===    ===  == =  -                        -  = ==  ===    ===     ===     ===     ===]]>
     public static new ETGPipeAPI Instance { get; } = (ETGPipeAPI)ClientPipe.Instance;
-    public override string PipeName => NetworkPipes.ETG.PipeName;
+    public override string PipeName => Pipes.ETG.PipeName;
 
 
 
@@ -37,5 +32,15 @@ public sealed class ETGPipeAPI : ClientPipe
         UnityDispatcher.ExceptionLogger = Plugin.Log;
         Logger = Plugin.Log;
         ExceptionLogger = Plugin.Log;
+        SetupEvents();
+    }
+
+    private void SetupEvents()
+    {
+        NetworkPipes.ETG.Initialize();
+        NetworkPipes.ETG.Blank += (username) => Plugin.Log($"{username} - {NetworkPipes.ETG.BlankCommand}");
+        NetworkPipes.ETG.Ammo += (username) => Plugin.Log($"{username} - {NetworkPipes.ETG.AmmoCommand}");
+        NetworkPipes.ETG.Health += (username) => Plugin.Log($"{username} - {NetworkPipes.ETG.HealthCommand}");
+        NetworkPipes.ETG.Shield += (username) => Plugin.Log($"{username} - {NetworkPipes.ETG.ShieldCommand}");
     }
 }

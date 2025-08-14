@@ -64,34 +64,6 @@ public readonly struct ResponseID
 
     /// ===     ===     ===     ===    ===  == =  -                        -  = ==  ===    ===     ===     ===     ===<![CDATA[
     /// .
-    /// .                                               Public Methods
-    /// .
-    /// ===     ===     ===     ===    ===  == =  -                        -  = ==  ===    ===     ===     ===     ===]]>
-    /// <summary>
-    /// Responds to the server to indicate that message was received.
-    /// </summary>
-    public void ClientRespond()
-    {
-        if (NetworkPipes.IsClient) NetworkPipes.Messages.Response(code);
-        else throw new InvalidOperationException("Cannot use simplified respond method on server side.");
-    }
-
-    /// <summary>
-    /// Responds to the server with specific content attached to the message.
-    /// </summary>
-    /// <param name="content">Content to be attached to the message.</param>
-    public void ClientRespond(string? content)
-    {
-        if (NetworkPipes.IsClient) NetworkPipes.Messages.Response(code, content);
-        else throw new InvalidOperationException("Cannot use simplified respond method on server side.");
-    }
-
-
-
-
-
-    /// ===     ===     ===     ===    ===  == =  -                        -  = ==  ===    ===     ===     ===     ===<![CDATA[
-    /// .
     /// .                                              Implementations
     /// .
     /// ===     ===     ===     ===    ===  == =  -                        -  = ==  ===    ===     ===     ===     ===]]>
@@ -251,6 +223,7 @@ public readonly struct ResponseID
         /// .
         /// ===     ===     ===     ===    ===  == =  -                        -  = ==  ===    ===     ===     ===     ===]]>
         private ushort iterator = 0;
+
 
 
 

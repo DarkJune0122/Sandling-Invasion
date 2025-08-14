@@ -70,10 +70,18 @@ public class Sandling : CompanionItem
         //};
 
         // Replaces a built-in Dog item in character's inventory.
-        PickupObject dogItem = Game.Items.Get("gungeon:dog");
-        dogItem.SetName(ItemName);
-        dogItem.SetShortDescription(ShortDescription);
-        dogItem.SetLongDescription(LongDescription);
+        CompanionItem item = Game.Items.Get("gungeon:dog") as CompanionItem;
+        if (item != null)
+        {
+            item.SetName(ItemName);
+            item.SetShortDescription(ShortDescription);
+            item.SetLongDescription(LongDescription);
+            var actor = EnemyDatabase.GetOrLoadByGuid(item.CompanionGuid);
+            Plugin.Log($"Actor: {actor}");
+            var controller = item.GetComponent<CompanionController>();
+            Plugin.Log($"Controller: {controller}");
+        }
+
         //Plugin.Log();
         //Plugin.LogFields(item.sprite.GetCurrentSpriteDef());
         //Plugin.Log(item.sprite.GetCurrentSpriteDef().uvs);
@@ -99,7 +107,7 @@ public class Sandling : CompanionItem
 
         // Overwriting dog's item sprite definition.
         Texture2D texture = ResourceExtractor.GetTextureFromResource(ItemSpritePath);
-        tk2dSpriteDefinition definition = dogItem.sprite.GetCurrentSpriteDef();
+        tk2dSpriteDefinition definition = item.sprite.GetCurrentSpriteDef();
         ETGMod.ReplaceTexture(definition, texture);
         definition.texelSize = new Vector2(17, 17);
         float halfSize = 8.5f / 16f; // Half of 17 in game units (pixels per unit: 16)
@@ -208,6 +216,7 @@ public class Sandling : CompanionItem
 
     protected static int GetSpawnOdds(int stage)
     {
+        return 0;
         if (stage < 0)
         {
             return DefaultOdds[0];
@@ -236,78 +245,88 @@ public class Sandling : CompanionItem
     /// <returns>Whether position was found.</returns>
     protected static bool TryGetLandingLocation(RoomHandler room, out Vector2 position)
     {
+        System.Collections.Generic.List<IntVector2> cells = room.Cells;
+        Plugin.Log($"Cell count: {cells.Count}");
+        Plugin.Log($"Cell [0]: {room.Cells[0]}");
+        Plugin.Log($"Cell [1]: {room.Cells[1]}");
+        Plugin.Log($"Cell [2]: {room.Cells[2]}");
+        Plugin.Log($"Cell [3]: {room.Cells[3]}");
+
+        var player = GameManager.Instance.PrimaryPlayer.CenterPosition;
+        Plugin.Log($"Player center: {player}");
+        Plugin.Log($"Player tile: {new Vector2Int(Mathf.RoundToInt(player.x), Mathf.RoundToInt(player.y))}");
         position = room.area.Center;
         return true; // Temporary solution, because otherwise everything is VERY buggy.
 
-        //if (room.Cells == null || room.Cells.Count == 0)
-        //{
-        //    position = default;
-        //    return false;
-        //}
+        if (room.Cells == null || room.Cells.Count == 0)
+        {
+            position = default;
+            return false;
+        }
 
-        //try
-        //{
-        //    DungeonData dungeon = GameManager.Instance.Dungeon.data;
+        try
+        {
+            DungeonData dungeon = GameManager.Instance.Dungeon.data;
 
-        //    // Defines min-max positions of the room.
-        //    int xMin = int.MaxValue, yMin = int.MaxValue, xMax = int.MinValue, yMax = int.MinValue;
-        //    foreach (var cell in room.Cells)
-        //    {
-        //        xMin = Mathf.Min(xMin, cell.x);
-        //        xMax = Mathf.Min(xMax, cell.x);
-        //        yMin = Mathf.Min(yMin, cell.y);
-        //        yMax = Mathf.Min(yMax, cell.y);
-        //    }
+            // Defines min-max positions of the room.
+            int xMin = int.MaxValue, yMin = int.MaxValue, xMax = int.MinValue, yMax = int.MinValue;
+            foreach (var cell in room.Cells)
+            {
+                xMin = Mathf.Min(xMin, cell.x);
+                xMax = Mathf.Min(xMax, cell.x);
+                yMin = Mathf.Min(yMin, cell.y);
+                yMax = Mathf.Min(yMax, cell.y);
+            }
 
-        //    float xCenter = (float)xMax - xMin;
-        //    float yCenter = (float)yMax - yMin;
+            float xCenter = (float)xMax - xMin;
+            float yCenter = (float)yMax - yMin;
 
-        //    // Looks for a valid cell.
-        //    float lastDistance = float.PositiveInfinity;
-        //    IntVector2 centerCell = default;
-        //    foreach (var cell in room.Cells)
-        //    {
-        //        float xDelta = cell.x - xCenter;
-        //        float yDelta = cell.y - yCenter;
-        //        float sqrDistance = xDelta * xDelta + yDelta * yDelta;
-        //        Plugin.Log(sqrDistance);
-        //        if (sqrDistance >= lastDistance)
-        //        {
-        //            continue;
-        //        }
+            // Looks for a valid cell.
+            float lastDistance = float.PositiveInfinity;
+            IntVector2 centerCell = default;
+            foreach (var cell in room.Cells)
+            {
+                float xDelta = cell.x - xCenter;
+                float yDelta = cell.y - yCenter;
+                float sqrDistance = xDelta * xDelta + yDelta * yDelta;
+                Plugin.Log(sqrDistance);
+                if (sqrDistance >= lastDistance)
+                {
+                    continue;
+                }
 
-        //        CellData data = dungeon[cell.x, cell.y];
-        //        Plugin.Log($"Data: " + data);
-        //        Plugin.Log($"Data.type: " + data.type);
-        //        if (data != null && data.type == CellType.FLOOR) // Accepts pit-only - any flags will be removed.
-        //        {
-        //            // Cell is valid. Go for spawning.
-        //            lastDistance = sqrDistance;
-        //            centerCell = cell;
-        //        }
-        //    }
+                CellData data = dungeon[cell.x, cell.y];
+                Plugin.Log($"Data: " + data);
+                Plugin.Log($"Data.type: " + data.type);
+                if (data != null && data.type == CellType.FLOOR) // Accepts pit-only - any flags will be removed.
+                {
+                    // Cell is valid. Go for spawning.
+                    lastDistance = sqrDistance;
+                    centerCell = cell;
+                }
+            }
 
-        //    Plugin.Log($"Lowest distance recorded: {lastDistance}");
-        //    if (lastDistance > 1_000_000f) // Likely bugged out.
-        //    {
-        //        position = room.area.Center;
-        //        return true;
-        //    }
-        //    else
-        //    {
-        //        position = centerCell.ToVector2() + new Vector2(0.5f, 0.5f);
-        //        return true;
-        //    }
-        //}
-        //catch (Exception e)
-        //{
-        //    Plugin.Warning($"Cannot locate a room center without issues!");
-        //    Plugin.Warning(e.Message);
-        //    Plugin.Warning(e.StackTrace);
-        //}
+            Plugin.Log($"Lowest distance recorded: {lastDistance}");
+            if (lastDistance > 1_000_000f) // Likely bugged out.
+            {
+                position = room.area.Center;
+                return true;
+            }
+            else
+            {
+                position = centerCell.ToVector2() + new Vector2(0.5f, 0.5f);
+                return true;
+            }
+        }
+        catch (Exception e)
+        {
+            Plugin.Warning($"Cannot locate a room center without issues!");
+            Plugin.Warning(e.Message);
+            Plugin.Warning(e.StackTrace);
+        }
 
-        //position = default;
-        //return false;
+        position = default;
+        return false;
     }
 
 

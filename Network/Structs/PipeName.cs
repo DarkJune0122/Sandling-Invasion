@@ -1,6 +1,4 @@
 ﻿#nullable enable
-using System;
-
 /// <summary>
 /// Standalone pipe name.
 /// </summary>
@@ -50,7 +48,7 @@ public readonly struct PipeName
     public override int GetHashCode() => name?.GetHashCode() ?? 0;
     public override bool Equals(object? obj)
     {
-        return obj is PipeName other && string.Equals(name, other.name, StringComparison.Ordinal);
+        return obj is PipeName other && string.Equals(name, other.name);
     }
 
 

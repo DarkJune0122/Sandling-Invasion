@@ -2,6 +2,17 @@
 - Item can drop down into a water - we need to search for a free tile (will be fixed in v0.1.6)
 - Item dropping might not be supported in multiplayer context.
 
+# v0.1.8:
+- Renewed Sandling behaviour.
+### Fixed:
+- Compass might fall in the water or get stuck in the wall.
+
+
+
+# v0.1.7:
+- Added networking methods to use with our own Twitch control panel.
+
+
 
 # v0.1.6:
 - ACTUALLY removed "MANUAL INSTALL ONLY" notice.

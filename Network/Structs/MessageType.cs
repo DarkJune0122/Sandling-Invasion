@@ -1,4 +1,5 @@
-﻿/// <summary>
+﻿#nullable enable
+/// <summary>
 /// All message types that system supports.
 /// </summary>
 /// <remarks>
@@ -26,5 +27,5 @@ public enum MessageType : byte
     /// <summary>
     /// Indicates two-way message, that expects a response.
     /// </summary>
-    Direct = (byte)'D',
+    Request = (byte)'D',
 }
