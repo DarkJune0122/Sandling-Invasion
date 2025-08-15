@@ -26,8 +26,6 @@ public static partial class Pipes
 
 
 
-
-
         /// ===     ===     ===     ===    ===  == =  -                        -  = ==  ===    ===     ===     ===     ===<![CDATA[
         /// .
         /// .                                                   Events

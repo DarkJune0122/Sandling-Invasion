@@ -59,6 +59,7 @@ namespace SandlingInvasion
         {
             try
             {
+                Pipes.Initialize();
                 ClientPipe.Initialize<ETGPipeAPI>();
                 Register();
             }

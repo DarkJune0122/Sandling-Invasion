@@ -34,6 +34,11 @@ public readonly struct PipeName
     /// .
     /// ===     ===     ===     ===    ===  == =  -                        -  = ==  ===    ===     ===     ===     ===]]>
     private PipeName(string name) => this.name = name;
+    static PipeName()
+    {
+        // This is to ensure that the static constructor is called before any instance is created.
+        // Needed to avoid TypeInitializationExceptions.
+    }
 
 
 

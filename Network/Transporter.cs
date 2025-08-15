@@ -160,6 +160,7 @@ public abstract class Transporter : IDisposable
 
 
 
+
     /// ===     ===     ===     ===    ===  == =  -                        -  = ==  ===    ===     ===     ===     ===<![CDATA[
     /// .
     /// .                                               Private Fields
@@ -308,12 +309,14 @@ public abstract class Transporter : IDisposable
     /// ===     ===     ===     ===    ===  == =  -                        -  = ==  ===    ===     ===     ===     ===]]>
     public void Test()
     {
+        if (Status == false) return;
         Message message = builder.Get(MessageType.Normal, Message.Test);
         SendInternal(message);
     }
 
     public void TestRequest(ResponseHandler handler)
     {
+        if (Status == false) return;
         Message message = builder.Get(MessageType.Request, ResponseID.TestID, Message.Test);
         RegisterRequestInternal(ResponseID.TestID, handler);
         SendInternal(message);
@@ -323,12 +326,14 @@ public abstract class Transporter : IDisposable
 
     public void Send(string name)
     {
+        if (Status == false) return;
         Message message = builder.Get(MessageType.Normal, name);
         SendInternal(message);
     }
 
     public void Send(string name, string? content)
     {
+        if (Status == false) return;
         content ??= string.Empty;
         Message message = builder.Get(MessageType.Normal, Message.Pack(name, content));
         SendInternal(message);
@@ -338,6 +343,7 @@ public abstract class Transporter : IDisposable
 
     public void Request(string name, ResponseHandler handler)
     {
+        if (Status == false) return;
         ResponseID id = ids.GetNext();
         Message message = builder.Get(MessageType.Request, id, name);
         RegisterRequestInternal(id, handler);
@@ -346,6 +352,7 @@ public abstract class Transporter : IDisposable
 
     public void Request(string name, string? content, ResponseHandler handler)
     {
+        if (Status == false) return;
         content ??= string.Empty;
         ResponseID id = ids.GetNext();
         Message message = builder.Get(MessageType.Request, id, Message.Pack(name, content));
@@ -357,12 +364,14 @@ public abstract class Transporter : IDisposable
 
     public void Respond(ResponseID response)
     {
+        if (Status == false) return;
         Message message = builder.Get(MessageType.Response, response);
         SendInternal(message);
     }
 
     public void Respond(ResponseID response, string? content)
     {
+        if (Status == false) return;
         content ??= string.Empty;
         Message message = builder.Get(MessageType.Response, response, content);
         SendInternal(message);
@@ -414,6 +423,7 @@ public abstract class Transporter : IDisposable
     protected virtual void OnDisconnected()
     {
         Logger($"{LogPrefix} Disconnected from the remote host.");
+        responses.Clear();
     }
 
 

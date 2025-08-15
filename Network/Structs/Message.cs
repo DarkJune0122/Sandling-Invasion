@@ -38,12 +38,15 @@ public readonly struct Message
     public const string Test = "test";
 
     /// <summary>
-    /// Sends general pipe configuration data to the client.
+    /// Requests all related settings from the remove host, if any.
     /// </summary>
+    /// <remarks>
+    /// Only sent by clients.
+    /// </remarks>
     public const string UpdateSettings = "update";
 
     /// <summary>
-    /// Sent to the client when user tries to redeem a command.
+    /// Sent to the client when an user tries to redeem a pre-defined command.
     /// </summary>
     public const string Command = "command";
 
@@ -107,6 +110,11 @@ public readonly struct Message
     /// .
     /// ===     ===     ===     ===    ===  == =  -                        -  = ==  ===    ===     ===     ===     ===]]>
     private Message(string message) => content = message;
+    static Message()
+    {
+        // This is to ensure that the static constructor is called before any instance is created.
+        // Needed to avoid TypeInitializationExceptions.
+    }
 
 
 

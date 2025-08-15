@@ -52,10 +52,11 @@ public readonly struct ResponseID
     /// .                                                Constructors
     /// .
     /// ===     ===     ===     ===    ===  == =  -                        -  = ==  ===    ===     ===     ===     ===]]>
-    private ResponseID(ushort code)
+    private ResponseID(ushort code) => this.code = code;
+    static ResponseID()
     {
-        this.code = code;
-        Console.WriteLine($":: ResponseID created: {Format(this)} ({code})");
+        // This is to ensure that the static constructor is called before any instance is created.
+        // Needed to avoid TypeInitializationExceptions.
     }
 
 
@@ -99,7 +100,7 @@ public readonly struct ResponseID
     /// ===     ===     ===     ===    ===  == =  -                        -  = ==  ===    ===     ===     ===     ===]]>
     private static readonly char[] toHex = [
         '0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
-        'A', 'B', 'C', 'D', 'E', 'F',
+        'A', 'B', 'C', 'D', 'E', 'F'
     ];
 
     private static readonly int[] toInt = [
@@ -124,7 +125,7 @@ public readonly struct ResponseID
 
         // Values from 'a' to 'f'.
         // We mad them as well, just in case.
-        10, 11, 12, 13, 14, 15,
+        10, 11, 12, 13, 14, 15
     ];
 
 
@@ -147,6 +148,7 @@ public readonly struct ResponseID
         value3 >>= 8;
         value4 >>= 12;
 
+        return "0000";
         return new string((char[])[
             toHex[value1],
             toHex[value2],

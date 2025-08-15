@@ -1,4 +1,5 @@
 ﻿#nullable enable
+using System.Runtime.CompilerServices;
 using System.Text;
 
 /// <summary>
@@ -67,6 +68,28 @@ public static partial class Pipes
     public static readonly PipeName[] All = [
         ETG.PipeName,
     ];
+
+
+
+
+
+    /// ===     ===     ===     ===    ===  == =  -                        -  = ==  ===    ===     ===     ===     ===<![CDATA[
+    /// .
+    /// .                                               Static Methods
+    /// .
+    /// ===     ===     ===     ===    ===  == =  -                        -  = ==  ===    ===     ===     ===     ===]]>
+    /// <summary>
+    /// Should be called before any other code from this extension.
+    /// </summary>
+    /// <remarks>
+    /// Should be called exclusively from the main thread!
+    /// </remarks>
+    public static void Initialize()
+    {
+        RuntimeHelpers.RunClassConstructor(typeof(Message).TypeHandle);
+        RuntimeHelpers.RunClassConstructor(typeof(ResponseID).TypeHandle);
+        RuntimeHelpers.RunClassConstructor(typeof(PipeName).TypeHandle);
+    }
 
 
 
