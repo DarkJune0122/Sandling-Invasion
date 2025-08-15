@@ -40,12 +40,17 @@ public static partial class Pipes
     public const string LogPrefix = "[KPC]";
 
     /// <summary>
-    /// Standard delay between sending messaged.
+    /// Standard delay between sending messaged + <see cref="ConnectionHeartbeatMs"/>.
     /// </summary>
     /// <remarks>
     /// NEVER set below 1! or even 5!!! You don't need '200-1000 per Applications' updates per second!
     /// </remarks>
-    public const int HeartbeatMs = 350;
+    public const int HeartbeatMs = 200;
+
+    /// <summary>
+    /// How small delays between connection checks will be.
+    /// </summary>
+    public const int ConnectionHeartbeatMs = 50;
 
 
 

@@ -37,10 +37,10 @@ public sealed class ETGPipeAPI : ClientPipe
 
     private void SetupEvents()
     {
-        NetworkPipes.ETG.Initialize();
-        NetworkPipes.ETG.Blank += (username) => Plugin.Log($"{username} - {NetworkPipes.ETG.BlankCommand}");
-        NetworkPipes.ETG.Ammo += (username) => Plugin.Log($"{username} - {NetworkPipes.ETG.AmmoCommand}");
-        NetworkPipes.ETG.Health += (username) => Plugin.Log($"{username} - {NetworkPipes.ETG.HealthCommand}");
-        NetworkPipes.ETG.Shield += (username) => Plugin.Log($"{username} - {NetworkPipes.ETG.ShieldCommand}");
+        Pipes.ETG.Initialize();
+        Pipes.ETG.Blank += (username) => Plugin.Log($"{username} - {Pipes.ETG.BlankCommand}");
+        Pipes.ETG.Ammo += (username) => Plugin.Log($"{username} - {Pipes.ETG.AmmoCommand}");
+        Pipes.ETG.Health += (username) => Plugin.Log($"{username} - {Pipes.ETG.HealthCommand}");
+        Pipes.ETG.Shield += (username) => Plugin.Log($"{username} - {Pipes.ETG.ShieldCommand}");
     }
 }

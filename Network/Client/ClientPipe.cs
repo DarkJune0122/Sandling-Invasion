@@ -1,9 +1,6 @@
 ﻿#nullable enable
 using System;
-using System.IO;
 using System.IO.Pipes;
-using System.Threading;
-using System.Threading.Tasks;
 
 /// <summary>
 /// Standardized pipe class for clients.
@@ -86,13 +83,27 @@ public abstract class ClientPipe : Transporter
         // Nothing yet, but there might be something later. Always call this base method, please.
     }
 
-    protected override async Task<PipeStream?> Connect(CancellationToken token)
+    protected override void OnConnected()
     {
-        using var pipe = new NamedPipeClientStream(
-            Pipes.ServerName, PipeName,
-            PipeDirection.InOut, PipeOptions.Asynchronous);
+        base.OnConnected();
+        Send(Message.UpdateSettings);
+    }
 
-        await pipe.ConnectAsync(token);
-        return pipe;
+    /// <summary>
+    /// Called when either server notifies about disconnection.
+    /// </summary>
+    protected override void OnDisconnected()
+    {
+        base.OnDisconnected();
+    }
+
+    protected override PipeStream? Connect(ref bool canceled)
+    {
+        using var stream = new NamedPipeClientStream(
+            Pipes.ServerName, PipeName,
+            PipeDirection.InOut);
+
+        stream.Connect();
+        return stream;
     }
 }

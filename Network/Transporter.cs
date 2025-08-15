@@ -3,9 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.IO.Pipes;
-using System.Linq;
 using System.Threading;
-using System.Threading.Tasks;
 using static Pipes;
 
 /// <summary>
@@ -35,10 +33,33 @@ public abstract class Transporter : IDisposable
     /// <remarks>
     /// Changes to <c>false</c> after a while without any connection to the remote host.
     /// </remarks>
-    public virtual bool Status
+    public bool Status
     {
         get => m_Status;
-        set => m_Status = value;
+        private set
+        {
+            if (m_Status == value) return;
+            if (value)
+            {
+                OnConnected();
+            }
+            else
+            {
+                OnDisconnected();
+            }
+        }
+    }
+
+    /// <summary>
+    /// Delay that has to happen between messages to be sensed as connection timeout.
+    /// </summary>
+    /// <remarks>
+    /// Once <see cref="Transporter"/> timed out - <see cref="Status"/> will be set to either <c>false</c> or <c>true</c>.
+    /// </remarks>
+    public int TimeoutDelayMs
+    {
+        get => m_TimeoutDelayMs;
+        set => m_TimeoutDelayMs = Math.Max(value, 1000);
     }
 
     /// <summary>
@@ -121,16 +142,20 @@ public abstract class Transporter : IDisposable
     protected readonly ResponseID.ResponseIDBuilder ids = new();
     protected readonly Message.MessageBuilder builder = new();
 
-    protected readonly CancellationTokenSource source;
     /// <summary>
     /// All the pending messages to be sent to the remote host.
     /// </summary>
     protected readonly List<Message> messages = [];
     protected readonly Action<Action> dispatcher;
-    protected readonly Task reader;
+    protected readonly Thread worker;
 
     protected bool m_Active = true;
     protected bool m_Status = false;
+
+    /// <summary>
+    /// <see cref="Environment.TickCount64"/> from the last time connection was made.
+    /// </summary>
+    protected int lastConnectionTime = int.MinValue;
 
 
 
@@ -142,6 +167,12 @@ public abstract class Transporter : IDisposable
     /// ===     ===     ===     ===    ===  == =  -                        -  = ==  ===    ===     ===     ===     ===]]>
     private static Action<object> m_Logger = Console.WriteLine;
     private static Action<object> m_ExceptionLogger = Console.WriteLine;
+    private int m_TimeoutDelayMs = 1000;
+    /// <summary>
+    /// Whether underlying thread should be canceled.
+    /// Once set to <c>true</c> - should never be set to <c>false</c> again.
+    /// </summary>
+    private bool canceled = false;
 
 
 
@@ -161,9 +192,10 @@ public abstract class Transporter : IDisposable
     public Transporter()
     {
         dispatcher = (a) => a?.Invoke();
-        source = new CancellationTokenSource();
-        CancellationToken token = source.Token;
-        reader = Task.Run(() => ReadStream(token), token);
+        worker = new Thread(ReadStream)
+        {
+            Name = "Transporter Stream Reader",
+        };
 
         Listen(Message.Test, (_) => Logger($"{LogPrefix} Test message received!"));
         Handle(Message.Test, (response, _) =>
@@ -183,9 +215,11 @@ public abstract class Transporter : IDisposable
     public Transporter(Action<Action> dispatcher)
     {
         this.dispatcher = dispatcher;
-        source = new CancellationTokenSource();
-        CancellationToken token = source.Token;
-        reader = Task.Run(() => ReadStream(token), token);
+        worker = new Thread(ReadStream)
+        {
+            Name = "Transporter Stream Reader",
+            IsBackground = true,
+        };
     }
 
     ~Transporter()
@@ -195,24 +229,16 @@ public abstract class Transporter : IDisposable
 
     public void Dispose()
     {
-        Dispose(true);
         GC.SuppressFinalize(this);
+        Dispose(true);
     }
 
     private void Dispose(bool disposing)
     {
-        source.Cancel();
-        if (disposing)
+        canceled = true;
+        if (!disposing)
         {
-            try
-            {
-                reader?.Wait(); // only block in explicit Dispose, not in finalizer
-            }
-            catch (AggregateException ex) when (ex.InnerExceptions.All(e => e is TaskCanceledException))
-            {
-                // Ignore expected cancellation
-            }
-            source.Dispose();
+            worker.Join(1000); // Wait for the last connection to finish.
         }
     }
 
@@ -377,6 +403,25 @@ public abstract class Transporter : IDisposable
 
     /// ===     ===     ===     ===    ===  == =  -                        -  = ==  ===    ===     ===     ===     ===<![CDATA[
     /// .
+    /// .                                                 Callbacks
+    /// .
+    /// ===     ===     ===     ===    ===  == =  -                        -  = ==  ===    ===     ===     ===     ===]]>
+    protected virtual void OnConnected()
+    {
+        Logger($"{LogPrefix} Connected to the remote host.");
+    }
+
+    protected virtual void OnDisconnected()
+    {
+        Logger($"{LogPrefix} Disconnected from the remote host.");
+    }
+
+
+
+
+
+    /// ===     ===     ===     ===    ===  == =  -                        -  = ==  ===    ===     ===     ===     ===<![CDATA[
+    /// .
     /// .                                              Handling Methods
     /// .
     /// ===     ===     ===     ===    ===  == =  -                        -  = ==  ===    ===     ===     ===     ===]]>
@@ -465,146 +510,151 @@ public abstract class Transporter : IDisposable
     /// This code might execute on a background thread.
     /// And please, do NOT use 'using' in this method - <see cref="Transporter"/> will close <see cref="PipeStream"/> for you!
     /// </remarks>
+    /// <param name="canceled">Whether connection task was canceled or not. A bit hacky method.</param>
     /// <returns>
     /// <see cref="PipeStream"/> for reading and writing purposes. <c>NULL</c> if no need to connect at the moment.
     /// </returns>
-    protected virtual async Task<PipeStream?> Connect(CancellationToken token)
+    protected abstract PipeStream? Connect(ref bool canceled);
+    protected void ReadStream()
     {
-        await Task.CompletedTask;
-        return null;
-    }
-
-    protected async Task ReadStream(CancellationToken token)
-    {
-        while (!token.IsCancellationRequested)
+        while (!canceled)
         {
             if (!m_Active)
             {
                 // Prevent CPU burn, LOL
-                await Task.Delay(HeartbeatMs * 2, token);
+                Thread.Sleep(HeartbeatMs * 2);
                 continue;
             }
 
-            using var stream = await Connect(token);
-            if (stream == null)
+            using var stream = Connect(ref canceled);
+            if (stream == null || stream.IsConnected)
             {
-                await Task.Delay(HeartbeatMs * 2, token);
+                Thread.Sleep(HeartbeatMs * 2);
+                UpdateStatus();
                 continue;
             }
+            else SetStatusActive();
 
             // Do we need to lock list here?
-            Task writing = Task.CompletedTask;
             if (m_Active && messages.Count > 0)
             {
-                writing = Task.Run(async () =>
+                while (stream.IsConnected && !canceled)
                 {
-                    while (stream.IsConnected && !token.IsCancellationRequested)
+                    string[] toSend;
+                    lock (messages)
                     {
-                        string[] toSend;
-                        lock (messages)
-                        {
-                            toSend = [.. messages];
-                            messages.Clear();
-                        }
-
-                        for (int i = 0; i < toSend.Length; i++)
-                        {
-                            ReadOnlyMemory<byte> buffer = new(Encoding.GetBytes(toSend[i] + "\n"));
-                            await stream.WriteAsync(buffer, token);
-                        }
-
-                        await stream.FlushAsync(token);
+                        toSend = [.. messages];
+                        messages.Clear();
                     }
-                }, token);
+
+                    foreach (string message in toSend)
+                    {
+                        stream.Write(Encoding.GetBytes(message + "\n"), 0, message.Length);
+                    }
+
+                    stream.Flush();
+                }
             }
 
-            Task reading = Task.Run(async () =>
+            using var reader = new StreamReader(stream, Encoding);
+            int result = reader.Peek(); // Ensures that the stream has anything to read.
+            if (result != -1)
             {
-                using var reader = new StreamReader(stream, Encoding);
-                int result = reader.Peek(); // Ensures that the stream has anything to read.
-                if (result != -1)
+                try
                 {
-                    try
+                    do
                     {
-                        do
+                        MessageType type = (MessageType)reader.Read();
+                        ResponseID response = default;
+                        string name;
+                        string content;
+                        switch (type)
                         {
-                            MessageType type = (MessageType)reader.Read();
-                            ResponseID response = default;
-                            string name;
-                            string content;
-                            switch (type)
-                            {
-                                case MessageType.Normal:
-                                    (name, content) = await ReadContent(reader);
-                                    dispatcher(() => HandleMessage(name, content));
-                                    break;
+                            case MessageType.Normal:
+                                ReadContent(reader, out name, out content);
+                                dispatcher(() => HandleMessage(name, content));
+                                break;
 
-                                case MessageType.Request:
-                                    response = ResponseID.Format(
-                                        reader.Read(),
-                                        reader.Read(),
-                                        reader.Read(),
-                                        reader.Read()
-                                    );
-                                    (name, content) = await ReadContent(reader);
-                                    dispatcher(() => HandleRequest(response, name, content));
-                                    break;
+                            case MessageType.Request:
+                                response = ResponseID.Format(
+                                    reader.Read(),
+                                    reader.Read(),
+                                    reader.Read(),
+                                    reader.Read()
+                                );
+                                ReadContent(reader, out name, out content);
+                                dispatcher(() => HandleRequest(response, name, content));
+                                break;
 
-                                case MessageType.Response:
-                                    response = ResponseID.Format(
-                                        reader.Read(),
-                                        reader.Read(),
-                                        reader.Read(),
-                                        reader.Read()
-                                    );
-                                    content = await ReadAll(reader);
-                                    dispatcher(() => HandleResponse(response, content));
-                                    continue;
+                            case MessageType.Response:
+                                response = ResponseID.Format(
+                                    reader.Read(),
+                                    reader.Read(),
+                                    reader.Read(),
+                                    reader.Read()
+                                );
+                                ReadAll(reader, out content);
+                                dispatcher(() => HandleResponse(response, content));
+                                continue;
 
-                                default: throw new InvalidOperationException($"{LogPrefix} Unknown message type: {type}");
-                            }
+                            default: throw new InvalidOperationException($"{LogPrefix} Unknown message type: {type}");
                         }
-                        while (reader.Peek() != -1);
                     }
-                    catch
-                    {
-                        // Ignores another "Operation failed successfully" message)
-                        // Gosh, that's a lot of try-catch statements.
-                    }
+                    while (reader.Peek() != -1);
                 }
-            }, token);
+                catch
+                {
+                    // Ignores another "Operation failed successfully" message)
+                    // Gosh, that's a lot of try-catch statements.
+                }
+            }
 
-            await Task.Delay(HeartbeatMs, token);
-            await Task.WhenAny(writing, reading).WaitAsync(token);
+            Thread.Sleep(HeartbeatMs);
         }
     }
 
-    protected static async Task<(string name, string content)> ReadContent(StreamReader reader)
+    protected static void ReadContent(StreamReader reader, out string name, out string content)
     {
         // TODO: Replace with less memory-consuming solution.
-        string? line = await reader.ReadLineAsync();
+        string? line = reader.ReadLine();
         if (line == null)
         {
-            return (string.Empty, string.Empty);
+            name = string.Empty;
+            content = string.Empty;
+            return;
         }
 
         // Cuts line from "name: content" form into parts.
         int index = line.IndexOf(Message.ContentSeparator);
         if (index != -1)
         {
-            string name = line.Substring(0, index);
+#pragma warning disable IDE0057 // Use range operator - avoided for easier distribution.
+            name = line.Substring(0, index);
             int offset = index + Message.ContentSeparator.Length;
-            string content = line.Substring(offset, line.Length - offset);
-            return (name, content);
+            content = line.Substring(offset, line.Length - offset);
+#pragma warning restore IDE0057 // Use range operator
         }
         else
         {
-            return (line, string.Empty);
+            name = line;
+            content = string.Empty;
         }
     }
 
-    protected static async Task<string> ReadAll(StreamReader reader)
+    protected static void ReadAll(StreamReader reader, out string content)
     {
-        return await reader.ReadLineAsync() ?? string.Empty;
+        content = reader.ReadLine() ?? string.Empty;
+    }
+
+    protected void UpdateStatus()
+    {
+        int tick = Environment.TickCount;
+        Status = tick - lastConnectionTime <= TimeoutDelayMs;
+    }
+
+    protected void SetStatusActive()
+    {
+        lastConnectionTime = Environment.TickCount;
+        UpdateStatus();
     }
 }

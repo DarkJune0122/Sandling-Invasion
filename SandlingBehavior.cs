@@ -14,7 +14,7 @@ public sealed class SandlingBehavior : BehaviorBase
     {
         get
         {
-            if (NetworkPipes.ETG.InvasionMode) return InvasionChanceToFindItemOnRoomClear;
+            if (Pipes.ETG.InvasionMode) return InvasionChanceToFindItemOnRoomClear;
             else return RegularChanceToFindItemOnRoomClear;
         }
     }
