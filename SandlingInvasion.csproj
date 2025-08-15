@@ -49,6 +49,8 @@
     <Compile Include="Network\Structs\PipeName.cs" />
     <Compile Include="Network\Structs\ResponseID.cs" />
     <Compile Include="Network\Transporter.cs" />
+    <Compile Include="Patches\CompanionControllerPatch.cs" />
+    <Compile Include="Patches\DogItemFindPatches.cs" />
     <Compile Include="Plugin.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Sandling.cs" />

@@ -1,4 +1,6 @@
 ﻿#nullable enable
+using System;
+
 public static partial class Pipes
 {
     /// <summary>
@@ -15,7 +17,43 @@ public static partial class Pipes
         /// <summary>
         /// Whether 'Sandling Invasion' mode was activated in KCP.
         /// </summary>
-        public static bool InvasionMode { get; set; } = false;
+        public static bool InvasionMode
+        {
+            get => m_InvasionMode;
+            private set
+            {
+                if (m_InvasionMode == value) return;
+                m_InvasionMode = value;
+                InvasionModeChanged?.Invoke(value);
+            }
+        }
+
+        /// <summary>
+        /// Whether petting is allowed when <see cref="InvasionMode"/> is set to <c>true</c>.
+        /// </summary>
+        public static bool PettingAllowed
+        {
+            get => m_PettingAllowed;
+            private set
+            {
+                if (m_PettingAllowed == value) return;
+                m_PettingAllowed = value;
+                PettingAllowedChanged?.Invoke(value);
+            }
+        }
+
+        public static bool WhetherPettingAllowed => InvasionMode == false || PettingAllowed;
+
+
+
+
+        /// ===     ===     ===     ===    ===  == =  -                        -  = ==  ===    ===     ===     ===     ===<![CDATA[
+        /// .
+        /// .                                                   Events
+        /// .
+        /// ===     ===     ===     ===    ===  == =  -                        -  = ==  ===    ===     ===     ===     ===]]>
+        public static event Action<bool>? InvasionModeChanged;
+        public static event Action<bool>? PettingAllowedChanged;
 
         public static event CommandReceivedEventHandler? Blank;
         public static event CommandReceivedEventHandler? Ammo;
@@ -43,12 +81,15 @@ public static partial class Pipes
         /// .                                                  Features
         /// .
         /// ===     ===     ===     ===    ===  == =  -                        -  = ==  ===    ===     ===     ===     ===]]>
-        public static readonly PipeName PipeName = "KonoobiSandlingsUnited_EnterTheGungeon";
-
         /// <summary>
         /// Setting key for "Invasion" mode. Mode allows Sandlings to enter the game via Twitch chat directly.
         /// </summary>
         public const string SettingInvasionMode = "etg:setting:invasion";
+
+        /// <summary>
+        /// Whether petting is allowed during invasion.
+        /// </summary>
+        public const string SettingPettingAllowed = "etg:setting:petting";
 
         /// <summary>
         /// Event is sent to the server when new game starts.
@@ -98,6 +139,20 @@ public static partial class Pipes
 
         /// ===     ===     ===     ===    ===  == =  -                        -  = ==  ===    ===     ===     ===     ===<![CDATA[
         /// .
+        /// .                                                  Fields
+        /// .
+        /// ===     ===     ===     ===    ===  == =  -                        -  = ==  ===    ===     ===     ===     ===]]>
+        public static readonly PipeName PipeName = "KonoobiSandlingsUnited_EnterTheGungeon";
+
+        private static bool m_InvasionMode = false;
+        private static bool m_PettingAllowed = true;
+
+
+
+
+
+        /// ===     ===     ===     ===    ===  == =  -                        -  = ==  ===    ===     ===     ===     ===<![CDATA[
+        /// .
         /// .                                               Static Methods
         /// .
         /// ===     ===     ===     ===    ===  == =  -                        -  = ==  ===    ===     ===     ===     ===]]>
@@ -106,8 +161,10 @@ public static partial class Pipes
         /// </summary>
         public static void Initialize()
         {
-            ClientPipe.Instance?.Listen(SettingInvasionMode, (v) => InvasionMode = Message.Boolean(v));
-            ClientPipe.Instance?.Listen(Message.Command, (content) =>
+            Reset();
+            ETGPipeAPI.Instance.Listen(SettingInvasionMode, (v) => InvasionMode = Message.Boolean(v));
+            ETGPipeAPI.Instance.Listen(SettingPettingAllowed, (v) => PettingAllowed = Message.Boolean(v));
+            ETGPipeAPI.Instance.Listen(Message.Command, (content) =>
             {
                 Message.Unpack(content, out string username, out string command);
                 switch (command)
@@ -119,11 +176,17 @@ public static partial class Pipes
                 }
             });
 
-            ClientPipe.Instance?.Listen(ReplacePlayerEvent, (content) =>
+            ETGPipeAPI.Instance.Listen(ReplacePlayerEvent, (content) =>
             {
                 Message.Unpack(content, out string resignedPlayer, out string newPlayer);
                 ReplacePlayer?.Invoke(resignedPlayer, newPlayer);
             });
+        }
+
+        public static void Reset()
+        {
+            InvasionMode = false;
+            PettingAllowed = false;
         }
     }
 }

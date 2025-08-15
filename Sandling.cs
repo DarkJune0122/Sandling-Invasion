@@ -1,8 +1,11 @@
-﻿using Alexandria.DungeonAPI;
+﻿using Alexandria.CharacterAPI;
+using Alexandria.DungeonAPI;
+using Alexandria.EnemyAPI;
 using Alexandria.ItemAPI;
 using Dungeonator;
 using Gungeon;
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 
@@ -157,10 +160,16 @@ public class Sandling : CompanionItem
     /// .
     /// ===     ===     ===     ===    ===  == =  -                        -  = ==  ===    ===     ===     ===     ===]]>
     private static readonly int[] DefaultOdds = [10, 40, 100, 240, 480];
+    private static readonly int[] InvasionOdds = [10, 50, 100, 200, 300];
     private static int currentOdds = 0; // Note: 0 - is a valid odd. Odds go not from [1 - 10] but [0 - 9]
 
+    /// <summary>
+    /// Last killed enemy, if any.
+    /// </summary>
+    private static readonly List<AIActor> trackers = [];
 
-    protected static void SetupSpawn()
+
+    private static void SetupSpawn()
     {
         PickupObject sandling = Game.Items.Get("gungeon:dog");
         
@@ -180,29 +189,45 @@ public class Sandling : CompanionItem
                 {
                     room.OnEnemiesCleared += () =>
                     {
-                        int sandlingAmount = 0;
-                        foreach (var player in GameManager.Instance.AllPlayers)
-                        {
-                            sandlingAmount += player.passiveItems.Count(item => item.itemName == sandling.itemName);
-                        }
-
-                        //Plugin.Log(GameManager.Instance.AllPlayers, (item) => item.ActorName);
-                        //int reduction = GameManager.Instance.AllPlayers.Count(player => player.ActorName == "guide");
-                        //Plugin.Log("Reduction: " + reduction);
-
-                        int spawnOdds = GetSpawnOdds(stage: sandlingAmount);
-
-                        // Keep in mind - int range is exclusive! Also 0/9 odd is essentially 1/10.
-                        if (currentOdds >= UnityEngine.Random.Range(0, spawnOdds) && TryGetLandingLocation(room, out Vector2 position))
-                        {
-                            Plugin.Log($"Spawning item (sorry if it is inside the wall :D)");
-                            LootEngine.SpawnItem(sandling.gameObject, position, Vector2.up, 0f);
-
-                            // Odd reset.
-                            currentOdds = 0;
-                        }
-                        else currentOdds++; // Gives higher odds next roll.
+                        // Fired before enemy kill events, surprisingly.
+                        currentOdds++;
                     };
+
+                    room.Entered += (player) =>
+                    {
+                        if (room.GetActiveEnemiesCount(RoomHandler.ActiveEnemyType.All) != 0)
+                        {
+                            foreach (var enemy in room.GetActiveEnemies(RoomHandler.ActiveEnemyType.All))
+                            {
+                                TrackEnemy(enemy);
+                            }
+                        }
+                    };
+
+                    room.OnEnemyRegistered += TrackEnemy;
+
+                    // Simplifications:
+                    void TrackEnemy(AIActor enemy)
+                    {
+                        Plugin.Log($"Tracking: {enemy.ActorName}");
+                        if (enemy != null && enemy.healthHaver != null)
+                        {
+                            trackers.Add(enemy);
+                            enemy.healthHaver.OnPreDeath += (position) =>
+                            {
+                                // Removes all 'null's, if there is any.
+                                for (int i = trackers.Count - 1; i >= 0; i--)
+                                {
+                                    if (trackers[i] == null) trackers.RemoveAt(i);
+                                }
+
+                                if (trackers.Remove(enemy) && trackers.Count == 0)
+                                {
+                                    TrySpawnItem(sandling, room, around: enemy.CenterPosition);
+                                }
+                            };
+                        }
+                    }
                 }
             }
             catch (Exception e)
@@ -214,121 +239,63 @@ public class Sandling : CompanionItem
         };
     }
 
-    protected static int GetSpawnOdds(int stage)
+    private static void TrySpawnItem(PickupObject sandling, RoomHandler room, Vector2 around)
     {
-        return 0;
-        if (stage < 0)
+        int sandlingAmount = 0;
+        foreach (var player in GameManager.Instance.AllPlayers)
         {
-            return DefaultOdds[0];
-        }
-        else if (stage < DefaultOdds.Length)
-        {
-            return DefaultOdds[stage];
-        }
-        else if (DefaultOdds.Length >= 2)
-        {
-            int oddBase = DefaultOdds[DefaultOdds.Length - 1];
-            int oddDelta = (oddBase - DefaultOdds[DefaultOdds.Length - 2]);
-            return oddBase + oddDelta * (stage - DefaultOdds.Length + 1);
-        }
-        else
-        {
-            return DefaultOdds[DefaultOdds.Length - 1] * (stage - DefaultOdds.Length + 1);
-        }
-    }
-
-    /// <summary>
-    /// 
-    /// </summary>
-    /// <param name="room"></param>
-    /// <param name="position"></param>
-    /// <returns>Whether position was found.</returns>
-    protected static bool TryGetLandingLocation(RoomHandler room, out Vector2 position)
-    {
-        System.Collections.Generic.List<IntVector2> cells = room.Cells;
-        Plugin.Log($"Cell count: {cells.Count}");
-        Plugin.Log($"Cell [0]: {room.Cells[0]}");
-        Plugin.Log($"Cell [1]: {room.Cells[1]}");
-        Plugin.Log($"Cell [2]: {room.Cells[2]}");
-        Plugin.Log($"Cell [3]: {room.Cells[3]}");
-
-        var player = GameManager.Instance.PrimaryPlayer.CenterPosition;
-        Plugin.Log($"Player center: {player}");
-        Plugin.Log($"Player tile: {new Vector2Int(Mathf.RoundToInt(player.x), Mathf.RoundToInt(player.y))}");
-        position = room.area.Center;
-        return true; // Temporary solution, because otherwise everything is VERY buggy.
-
-        if (room.Cells == null || room.Cells.Count == 0)
-        {
-            position = default;
-            return false;
+            sandlingAmount += player.passiveItems.Count(item => item.itemName == sandling.itemName);
         }
 
-        try
-        {
-            DungeonData dungeon = GameManager.Instance.Dungeon.data;
+        int spawnOdds = GetSpawnOdds(stage: sandlingAmount);
 
-            // Defines min-max positions of the room.
-            int xMin = int.MaxValue, yMin = int.MaxValue, xMax = int.MinValue, yMax = int.MinValue;
-            foreach (var cell in room.Cells)
+        // Keep in mind - '0' is included, and 'max' is excluded! Meaning, that 0/9 odd is essentially 1/10.
+        if (currentOdds >= UnityEngine.Random.Range(0, spawnOdds))
+        {
+            var area = room.area;
+            Dungeon dungeon = GameManager.Instance.Dungeon;
+            IntVector2 source = new(
+                Mathf.Clamp(Mathf.RoundToInt(around.x), area.basePosition.x, area.basePosition.x + area.dimensions.x),
+                Mathf.Clamp(Mathf.RoundToInt(around.y), area.basePosition.y, area.basePosition.y + area.dimensions.y));
+            if (Utils.TryFindClosest(source,
+                (pos) => dungeon.data.CheckInBoundsAndValid(source) && dungeon.data[source].type == CellType.FLOOR,
+                out IntVector2 position))
             {
-                xMin = Mathf.Min(xMin, cell.x);
-                xMax = Mathf.Min(xMax, cell.x);
-                yMin = Mathf.Min(yMin, cell.y);
-                yMax = Mathf.Min(yMax, cell.y);
-            }
-
-            float xCenter = (float)xMax - xMin;
-            float yCenter = (float)yMax - yMin;
-
-            // Looks for a valid cell.
-            float lastDistance = float.PositiveInfinity;
-            IntVector2 centerCell = default;
-            foreach (var cell in room.Cells)
-            {
-                float xDelta = cell.x - xCenter;
-                float yDelta = cell.y - yCenter;
-                float sqrDistance = xDelta * xDelta + yDelta * yDelta;
-                Plugin.Log(sqrDistance);
-                if (sqrDistance >= lastDistance)
-                {
-                    continue;
-                }
-
-                CellData data = dungeon[cell.x, cell.y];
-                Plugin.Log($"Data: " + data);
-                Plugin.Log($"Data.type: " + data.type);
-                if (data != null && data.type == CellType.FLOOR) // Accepts pit-only - any flags will be removed.
-                {
-                    // Cell is valid. Go for spawning.
-                    lastDistance = sqrDistance;
-                    centerCell = cell;
-                }
-            }
-
-            Plugin.Log($"Lowest distance recorded: {lastDistance}");
-            if (lastDistance > 1_000_000f) // Likely bugged out.
-            {
-                position = room.area.Center;
-                return true;
+                Plugin.Log("Spawning sandling.");
+                LootEngine.SpawnItem(sandling.gameObject, position.ToVector3(), Vector2.up, 0f);
+                currentOdds = 0;
             }
             else
             {
-                position = centerCell.ToVector2() + new Vector2(0.5f, 0.5f);
-                return true;
+                Plugin.Log("Cannot spawn sandling. Increasing odds for the next spawn to 100%.");
+                currentOdds = spawnOdds;
             }
         }
-        catch (Exception e)
-        {
-            Plugin.Warning($"Cannot locate a room center without issues!");
-            Plugin.Warning(e.Message);
-            Plugin.Warning(e.StackTrace);
-        }
-
-        position = default;
-        return false;
+        else currentOdds++; // Gives higher odds next roll.
     }
 
+    private static int GetSpawnOdds(int stage)
+    {
+        int[] odds = Pipes.ETG.InvasionMode ? InvasionOdds : DefaultOdds;
+        if (stage < 0)
+        {
+            return odds[0];
+        }
+        else if (stage < odds.Length)
+        {
+            return odds[stage];
+        }
+        else if (odds.Length >= 2)
+        {
+            int oddBase = odds[odds.Length - 1];
+            int oddDelta = (oddBase - odds[odds.Length - 2]);
+            return oddBase + oddDelta * (stage - odds.Length + 1);
+        }
+        else
+        {
+            return odds[odds.Length - 1] * (stage - odds.Length + 1);
+        }
+    }
 
 
 

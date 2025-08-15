@@ -1,5 +1,6 @@
 ﻿using BepInEx;
 using Gungeon;
+using HarmonyLib;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -44,6 +45,7 @@ namespace SandlingInvasion
         /// Whether all things were registered.
         /// </summary>
         private static bool isRegistered = false;
+        private static Harmony harmony;
 
 
 
@@ -59,6 +61,9 @@ namespace SandlingInvasion
         {
             try
             {
+                harmony = new Harmony(GUID);
+                harmony.PatchAll();
+                Utils.Initialize();
                 Pipes.Initialize();
                 ClientPipe.Initialize<ETGPipeAPI>();
                 Register();

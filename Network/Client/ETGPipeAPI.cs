@@ -1,4 +1,5 @@
-﻿using SandlingInvasion;
+﻿using Alexandria.DungeonAPI;
+using SandlingInvasion;
 
 /// <summary>
 /// Gives functions to work with Konoob Control Panel messages in Enter the Gungeon.
@@ -31,7 +32,7 @@ public sealed class ETGPipeAPI() : ClientPipe(Pipes.ETG.PipeName, UnityDispatche
         UnityDispatcher.ExceptionLogger = Plugin.Log;
         Logger = Plugin.Log;
         ExceptionLogger = Plugin.Log;
-        SetupEvents();
+        //SetupEvents();
     }
 
     private void SetupEvents()
@@ -41,5 +42,7 @@ public sealed class ETGPipeAPI() : ClientPipe(Pipes.ETG.PipeName, UnityDispatche
         Pipes.ETG.Ammo += (username) => Plugin.Log($"{username} - {Pipes.ETG.AmmoCommand}");
         Pipes.ETG.Health += (username) => Plugin.Log($"{username} - {Pipes.ETG.HealthCommand}");
         Pipes.ETG.Shield += (username) => Plugin.Log($"{username} - {Pipes.ETG.ShieldCommand}");
+
+        DungeonHooks.OnPostDungeonGeneration += () => Send(Pipes.ETG.NewGameEvent);
     }
 }

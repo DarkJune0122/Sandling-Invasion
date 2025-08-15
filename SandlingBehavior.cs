@@ -1,8 +1,10 @@
-﻿using System.Collections;
+﻿using System;
+using System.Collections;
 using UnityEngine;
 
 namespace SandlingInvasion;
 
+[Obsolete("Not in use yet", true)]
 public sealed class SandlingBehavior : BehaviorBase
 {
     /// ===     ===     ===     ===    ===  == =  -                        -  = ==  ===    ===     ===     ===     ===<![CDATA[
@@ -80,7 +82,7 @@ public sealed class SandlingBehavior : BehaviorBase
 
     private void HandleRoomCleared(PlayerController obj)
     {
-        if (Random.value < ChanceToFindItemOnRoomClear)
+        if (UnityEngine.Random.value < ChanceToFindItemOnRoomClear)
         {
             m_DigTimer = 4.5f;
             if (!string.IsNullOrEmpty(ItemFindAnimationName))
