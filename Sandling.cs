@@ -11,7 +11,7 @@ using UnityEngine;
 
 namespace SandlingInvasion;
 
-public class Sandling : CompanionItem
+public static class Sandling
 {
     /// ===     ===     ===     ===    ===  == =  -                        -  = ==  ===    ===     ===     ===     ===<![CDATA[
     /// .
@@ -79,10 +79,6 @@ public class Sandling : CompanionItem
             item.SetName(ItemName);
             item.SetShortDescription(ShortDescription);
             item.SetLongDescription(LongDescription);
-            var actor = EnemyDatabase.GetOrLoadByGuid(item.CompanionGuid);
-            Plugin.Log($"Actor: {actor}");
-            var controller = item.GetComponent<CompanionController>();
-            Plugin.Log($"Controller: {controller}");
         }
 
         //Plugin.Log();
@@ -209,7 +205,6 @@ public class Sandling : CompanionItem
                     // Simplifications:
                     void TrackEnemy(AIActor enemy)
                     {
-                        Plugin.Log($"Tracking: {enemy.ActorName}");
                         if (enemy != null && enemy.healthHaver != null)
                         {
                             trackers.Add(enemy);
@@ -261,13 +256,11 @@ public class Sandling : CompanionItem
                 (pos) => dungeon.data.CheckInBoundsAndValid(source) && dungeon.data[source].type == CellType.FLOOR,
                 out IntVector2 position))
             {
-                Plugin.Log("Spawning sandling.");
                 LootEngine.SpawnItem(sandling.gameObject, position.ToVector3(), Vector2.up, 0f);
                 currentOdds = 0;
             }
             else
             {
-                Plugin.Log("Cannot spawn sandling. Increasing odds for the next spawn to 100%.");
                 currentOdds = spawnOdds;
             }
         }

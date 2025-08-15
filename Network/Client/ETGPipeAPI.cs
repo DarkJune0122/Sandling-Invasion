@@ -32,17 +32,17 @@ public sealed class ETGPipeAPI() : ClientPipe(Pipes.ETG.PipeName, UnityDispatche
         UnityDispatcher.ExceptionLogger = Plugin.Log;
         Logger = Plugin.Log;
         ExceptionLogger = Plugin.Log;
-        //SetupEvents();
+        SetupEvents();
     }
 
     private void SetupEvents()
     {
         Pipes.ETG.Initialize();
-        Pipes.ETG.Blank += (username) => Plugin.Log($"{username} - {Pipes.ETG.BlankCommand}");
-        Pipes.ETG.Ammo += (username) => Plugin.Log($"{username} - {Pipes.ETG.AmmoCommand}");
-        Pipes.ETG.Health += (username) => Plugin.Log($"{username} - {Pipes.ETG.HealthCommand}");
-        Pipes.ETG.Shield += (username) => Plugin.Log($"{username} - {Pipes.ETG.ShieldCommand}");
+        //Pipes.ETG.Blank += (username) => Plugin.Log($"{username} - {Pipes.ETG.BlankCommand}");
+        //Pipes.ETG.Ammo += (username) => Plugin.Log($"{username} - {Pipes.ETG.AmmoCommand}");
+        //Pipes.ETG.Health += (username) => Plugin.Log($"{username} - {Pipes.ETG.HealthCommand}");
+        //Pipes.ETG.Shield += (username) => Plugin.Log($"{username} - {Pipes.ETG.ShieldCommand}");
 
-        DungeonHooks.OnPostDungeonGeneration += () => Send(Pipes.ETG.NewGameEvent);
+        //DungeonHooks.OnPostDungeonGeneration += () => Send(Pipes.ETG.NewGameEvent);
     }
 }

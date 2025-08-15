@@ -1,29 +1,51 @@
-﻿using UnityEngine;
+﻿using System;
+using System.Collections.Generic;
+using UnityEngine;
 
 namespace SandlingInvasion.Patches;
 
 public static class CompanionControllerPatch
 {
-    [HarmonyLib.HarmonyPatch(typeof(CompanionController), nameof(CompanionController.Initialize))]
-    public static void Postfix(CompanionController instance, PlayerController owner)
+    /// ===     ===     ===     ===    ===  == =  -                        -  = ==  ===    ===     ===     ===     ===<![CDATA[
+    /// .
+    /// .                                                  Patches
+    /// .
+    /// ===     ===     ===     ===    ===  == =  -                        -  = ==  ===    ===     ===     ===     ===]]>
+    [HarmonyLib.HarmonyPatch(typeof(CompanionController))]
+    [HarmonyLib.HarmonyPatch(nameof(CompanionController.Initialize))]
+    public static void Prefix(CompanionController __instance, PlayerController player)
     {
-        owner = instance.m_owner;
-        if (owner != null)
+        if (__instance.aiActor.ActorName != "Dog")
         {
-            Plugin.Log($"Companion ('{instance.aiActor.ActorName}') spawned for player: {owner.name}");
-
-            // Prevents petting, if requested.
-            Pipes.ETG.InvasionModeChanged += (flag) => instance.CanBePet = Pipes.ETG.WhetherPettingAllowed;
-            Pipes.ETG.PettingAllowedChanged += (flag) => instance.CanBePet = Pipes.ETG.WhetherPettingAllowed;
-            instance.CanBePet = Pipes.ETG.WhetherPettingAllowed;
+            return;
         }
 
-        // Also replaces regular item find behaviour with custom one, if it was added:
-        //DogItemFindBehavior behavior = instance.GetComponent<DogItemFindBehavior>();
-        //if (behavior != null)
-        //{
-        //    Plugin.Log($"Behavior found!");
-        //}
-        //else Plugin.Log($"Behavior was NOT found.");
+        var owner = __instance.m_owner;
+        if (owner != null)
+        {
+            // Prevents petting, if requested.
+            Plugin.Log("Sandling initialized.");
+            Pipes.ETG.InvasionModeChanged += (flag) => __instance.CanBePet = Pipes.ETG.WhetherPettingAllowed;
+            Pipes.ETG.PettingAllowedChanged += (flag) => __instance.CanBePet = Pipes.ETG.WhetherPettingAllowed;
+            __instance.CanBePet = Pipes.ETG.WhetherPettingAllowed;
+        }
     }
+
+    [HarmonyLib.HarmonyPatch(typeof(CompanionController))]
+    [HarmonyLib.HarmonyPatch(nameof(CompanionController.OnDestroy))]
+    public static void Prefix(CompanionController __instance)
+    {
+        if (__instance.aiActor.ActorName != "Dog")
+        {
+            return;
+        }
+
+        var owner = __instance.m_owner;
+        if (owner != null)
+        {
+
+        }
+    }
+
+
 }

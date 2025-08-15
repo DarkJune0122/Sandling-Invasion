@@ -162,9 +162,9 @@ public static partial class Pipes
         public static void Initialize()
         {
             Reset();
-            ETGPipeAPI.Instance.Listen(SettingInvasionMode, (v) => InvasionMode = Message.Boolean(v));
-            ETGPipeAPI.Instance.Listen(SettingPettingAllowed, (v) => PettingAllowed = Message.Boolean(v));
-            ETGPipeAPI.Instance.Listen(Message.Command, (content) =>
+            ClientPipe.Instance?.Listen(SettingInvasionMode, (v) => InvasionMode = Message.Boolean(v));
+            ClientPipe.Instance?.Listen(SettingPettingAllowed, (v) => PettingAllowed = Message.Boolean(v));
+            ClientPipe.Instance?.Listen(Message.Command, (content) =>
             {
                 Message.Unpack(content, out string username, out string command);
                 switch (command)
@@ -176,7 +176,7 @@ public static partial class Pipes
                 }
             });
 
-            ETGPipeAPI.Instance.Listen(ReplacePlayerEvent, (content) =>
+            ClientPipe.Instance?.Listen(ReplacePlayerEvent, (content) =>
             {
                 Message.Unpack(content, out string resignedPlayer, out string newPlayer);
                 ReplacePlayer?.Invoke(resignedPlayer, newPlayer);
