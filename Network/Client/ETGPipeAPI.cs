@@ -6,7 +6,7 @@
 /// <![CDATA[v0.0.1]]>
 [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1050:Declare types in namespaces", Justification = "For easier distribution.")]
 [System.Diagnostics.CodeAnalysis.SuppressMessage("CodeQuality", "IDE0079:Remove unnecessary suppression", Justification = "To seal the one above")]
-public sealed class ETGPipeAPI : ClientPipe
+public sealed class ETGPipeAPI() : ClientPipe(Pipes.ETG.PipeName, UnityDispatcher.Dispatch)
 {
     /// ===     ===     ===     ===    ===  == =  -                        -  = ==  ===    ===     ===     ===     ===<![CDATA[
     /// .
@@ -14,7 +14,6 @@ public sealed class ETGPipeAPI : ClientPipe
     /// .
     /// ===     ===     ===     ===    ===  == =  -                        -  = ==  ===    ===     ===     ===     ===]]>
     public static new ETGPipeAPI Instance { get; } = (ETGPipeAPI)ClientPipe.Instance;
-    public override string PipeName => Pipes.ETG.PipeName;
 
 
 

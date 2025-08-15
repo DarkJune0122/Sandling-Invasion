@@ -103,12 +103,13 @@ public readonly struct ResponseID
         'A', 'B', 'C', 'D', 'E', 'F'
     ];
 
+    // TODO: Test if everything works as expected.
     private static readonly int[] toInt = [
         0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
         0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
         0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
         0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-        0, 0, 0, 0, 0, 0, 0, // First 47 are not HEX - ignored.
+        0, 0, 0, 0, 0, 0, 0, 0, // First 48 are not HEX - ignored.
 
         // Values from '0' to '9'
         0, 1, 2, 3, 4, 5, 6, 7, 8, 9,

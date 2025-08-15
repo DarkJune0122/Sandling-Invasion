@@ -23,24 +23,10 @@ public abstract class ClientPipe : Transporter
 
     /// ===     ===     ===     ===    ===  == =  -                        -  = ==  ===    ===     ===     ===     ===<![CDATA[
     /// .
-    /// .                                              Public Properties
-    /// .
-    /// ===     ===     ===     ===    ===  == =  -                        -  = ==  ===    ===     ===     ===     ===]]>
-    /// <summary>
-    /// Pipe name from one of the <see cref="Pipes"/> sub-classes (for example: <see cref="ETG.PipeName"/>)
-    /// </summary>
-    public abstract string PipeName { get; }
-
-
-
-
-
-    /// ===     ===     ===     ===    ===  == =  -                        -  = ==  ===    ===     ===     ===     ===<![CDATA[
-    /// .
     /// .                                                Constructors
     /// .
     /// ===     ===     ===     ===    ===  == =  -                        -  = ==  ===    ===     ===     ===     ===]]>
-    public ClientPipe() : base()
+    public ClientPipe(PipeName pipe) : base(pipe)
     {
         if (Instance == null)
         {
@@ -55,7 +41,7 @@ public abstract class ClientPipe : Transporter
         }
     }
 
-    protected ClientPipe(Action<Action> dispatcher) : base(dispatcher)
+    protected ClientPipe(PipeName pipe, Action<Action> dispatcher) : base(pipe, dispatcher)
     {
         if (Instance == null)
         {
@@ -114,11 +100,30 @@ public abstract class ClientPipe : Transporter
         base.OnDisconnected();
     }
 
-    protected override PipeStream? Connect(ref bool canceled)
+    protected override PipeStream? ConnectReader(ref bool canceled)
     {
-        using var stream = new NamedPipeClientStream(
-            Pipes.ServerName, PipeName,
-            PipeDirection.InOut);
+        if (canceled) return null;
+        var stream = new NamedPipeClientStream(
+            Pipes.ServerName, ServerPipeName, // Reads from server.
+            PipeDirection.In);
+
+        try
+        {
+            stream.Connect();
+            return stream;
+        }
+        catch
+        {
+            return null; // Sometimes happens when pipe is closed or closing.
+        }
+    }
+
+    protected override PipeStream? ConnectWriter(ref bool canceled)
+    {
+        if (canceled) return null;
+        var stream = new NamedPipeClientStream(
+            Pipes.ServerName, ClientPipeName, // Writes to client.
+            PipeDirection.Out);
 
         try
         {

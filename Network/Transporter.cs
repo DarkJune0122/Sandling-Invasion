@@ -18,6 +18,8 @@ public abstract class Transporter : IDisposable
     /// .                                              Public Properties
     /// .
     /// ===     ===     ===     ===    ===  == =  -                        -  = ==  ===    ===     ===     ===     ===]]>
+    public PipeName PipeName => m_PipeName;
+
     /// <summary>
     /// Whether transporter can and is sending any messages.
     /// </summary>
@@ -148,8 +150,13 @@ public abstract class Transporter : IDisposable
     /// </summary>
     protected readonly List<Message> messages = [];
     protected readonly Action<Action> dispatcher;
-    protected readonly Thread worker;
+    protected readonly Thread reader;
+    protected readonly Thread writer;
     protected readonly Thread checker;
+
+    protected readonly PipeName m_PipeName;
+    protected readonly PipeName ClientPipeName = string.Empty;
+    protected readonly PipeName ServerPipeName = string.Empty;
 
     protected bool m_Active = true;
     protected bool m_Status = false;
@@ -192,12 +199,20 @@ public abstract class Transporter : IDisposable
     /// <remarks>
     /// Use <see cref="Transporter(Action{Action})"/> to create background-thread transporter.
     /// </remarks>
-    public Transporter()
+    public Transporter(PipeName pipe)
     {
+        m_PipeName = pipe;
+        ClientPipeName = $"{pipe.name}_Client";
+        ServerPipeName = $"{pipe.name}_Server";
+
         dispatcher = (a) => a?.Invoke();
-        worker = new Thread(ReadStream)
+        reader = new Thread(ReadStream)
         {
             Name = "Transporter Stream Reader",
+        };
+        writer = new Thread(WriteStream)
+        {
+            Name = "Transporter Stream Writer",
         };
         checker = new Thread(StatusHandler)
         {
@@ -206,8 +221,10 @@ public abstract class Transporter : IDisposable
         };
 
         SetupListeners();
-        worker.Start();
-        checker.Start();
+        reader.Start();
+        writer.Start();
+        Status = true; // Debug - fix status evaluation.
+        //checker.Start();
     }
 
     /// <summary>
@@ -217,12 +234,21 @@ public abstract class Transporter : IDisposable
     /// Use <see cref="Transporter()"/> to create main-thread transporter.
     /// </remarks>
     /// <param name="dispatcher">Dispatched callback, to receive messages.</param>
-    public Transporter(Action<Action> dispatcher)
+    public Transporter(PipeName pipe, Action<Action> dispatcher)
     {
+        m_PipeName = pipe;
+        ClientPipeName = $"{pipe.name}_Client";
+        ServerPipeName = $"{pipe.name}_Server";
+
         this.dispatcher = dispatcher;
-        worker = new Thread(ReadStream)
+        reader = new Thread(ReadStream)
         {
             Name = "Transporter Stream Reader",
+            IsBackground = true,
+        };
+        writer = new Thread(WriteStream)
+        {
+            Name = "Transporter Stream Writer",
             IsBackground = true,
         };
         checker = new Thread(StatusHandler)
@@ -232,8 +258,10 @@ public abstract class Transporter : IDisposable
         };
 
         SetupListeners();
-        worker.Start();
-        checker.Start();
+        reader.Start();
+        writer.Start();
+        Status = true; // Debug - fix status evaluation.
+        //checker.Start();
     }
 
     /// <summary>
@@ -539,104 +567,124 @@ public abstract class Transporter : IDisposable
     /// </remarks>
     /// <param name="canceled">Whether connection task was canceled or not. A bit hacky method.</param>
     /// <returns>
-    /// <see cref="PipeStream"/> for reading and writing purposes. <c>NULL</c> if no need to connect at the moment.
+    /// <see cref="PipeStream"/> for reading/writing purposes. (see also: <seealso cref="PipeDirection"/>)
+    /// <para><c>NULL</c> if no need to connect at the moment.</para>
     /// </returns>
-    protected abstract PipeStream? Connect(ref bool canceled);
-    protected void ReadStream()
+    protected abstract PipeStream? ConnectReader(ref bool canceled);
+
+    /// <inheritdoc cref="ConnectReader(ref bool)"/>/>
+    protected abstract PipeStream? ConnectWriter(ref bool canceled);
+    protected void WriteStream()
     {
         while (!canceled)
         {
-            if (!m_Active)
+            try
             {
-                // Prevent CPU burn, LOL
-                Thread.Sleep(HeartbeatMs * 2);
-                continue;
-            }
-
-            using var stream = Connect(ref canceled);
-            if (stream == null || !stream.IsConnected)
-            {
-                Thread.Sleep(HeartbeatMs * 2);
-                continue;
-            }
-
-            // Do we need to lock list here?
-            lastConnectionTime = Environment.TickCount;
-            if (m_Active && messages.Count > 0)
-            {
-                while (stream.IsConnected && !canceled)
+                if (!m_Active)
                 {
-                    string[] toSend;
+                    // Prevent CPU burn, LOL
+                    Thread.Sleep(HeartbeatMs * 2);
+                    continue;
+                }
+
+                using var stream = ConnectWriter(ref canceled);
+                if (stream == null || !stream.IsConnected)
+                {
+                    Thread.Sleep(HeartbeatMs * 2);
+                    continue;
+                }
+
+                if (m_Active && messages.Count > 0)
+                {
+                    Message[] toSend;
                     lock (messages)
                     {
                         toSend = [.. messages];
                         messages.Clear();
                     }
 
-                    foreach (string message in toSend)
+                    using var writer = new StreamWriter(stream, Encoding);
+                    foreach (Message message in toSend)
                     {
-                        stream.Write(Encoding.GetBytes(message + "\n"), 0, message.Length);
+                        writer.WriteLine(message);
                     }
 
-                    stream.Flush();
+                    writer.Flush();
                 }
             }
-
-            using var reader = new StreamReader(stream, Encoding);
-            int result = reader.Peek(); // Ensures that the stream has anything to read.
-            if (result != -1)
+            catch (Exception ex)
             {
-                try
+                dispatcher(() => ExceptionLogger($"{LogPrefix} Writer: {ex.Message}\n{ex.StackTrace}"));
+            }
+
+            Thread.Sleep(HeartbeatMs);
+        }
+    }
+
+    protected void ReadStream()
+    {
+        while (!canceled)
+        {
+            try
+            {
+                if (!m_Active)
                 {
-                    do
+                    // Prevent CPU burn, LOL
+                    Thread.Sleep(HeartbeatMs * 2);
+                    continue;
+                }
+
+                using var stream = ConnectReader(ref canceled);
+                if (stream == null || !stream.IsConnected)
+                {
+                    Thread.Sleep(HeartbeatMs * 2);
+                    continue;
+                }
+
+                // Reading itself.
+                using var reader = new StreamReader(stream, Encoding);
+                while (reader.Peek() != -1)
+                {
+                    MessageType type = (MessageType)reader.Read();
+                    ResponseID response = default;
+                    string name;
+                    string content;
+                    switch (type)
                     {
-                        MessageType type = (MessageType)reader.Read();
-                        ResponseID response = default;
-                        string name;
-                        string content;
-                        switch (type)
-                        {
-                            case MessageType.Normal:
-                                ReadContent(reader, out name, out content);
-                                dispatcher(() => HandleMessage(name, content));
-                                break;
+                        case MessageType.Normal:
+                            ReadContent(reader, out name, out content);
+                            dispatcher(() => HandleMessage(name, content));
+                            break;
 
-                            case MessageType.Request:
-                                response = ResponseID.Format(
-                                    reader.Read(),
-                                    reader.Read(),
-                                    reader.Read(),
-                                    reader.Read()
-                                );
-                                ReadContent(reader, out name, out content);
-                                dispatcher(() => HandleRequest(response, name, content));
-                                break;
+                        case MessageType.Request:
+                            response = ResponseID.Format(
+                                reader.Read(),
+                                reader.Read(),
+                                reader.Read(),
+                                reader.Read()
+                            );
+                            ReadContent(reader, out name, out content);
+                            dispatcher(() => HandleRequest(response, name, content));
+                            break;
 
-                            case MessageType.Response:
-                                response = ResponseID.Format(
-                                    reader.Read(),
-                                    reader.Read(),
-                                    reader.Read(),
-                                    reader.Read()
-                                );
-                                ReadAll(reader, out content);
-                                dispatcher(() => HandleResponse(response, content));
-                                continue;
+                        case MessageType.Response:
+                            response = ResponseID.Format(
+                                reader.Read(),
+                                reader.Read(),
+                                reader.Read(),
+                                reader.Read()
+                            );
+                            ReadAll(reader, out content);
+                            dispatcher(() => HandleResponse(response, content));
+                            continue;
 
-                            default: throw new InvalidOperationException($"{LogPrefix} Unknown message type: {type}");
-                        }
+                        default: throw new InvalidOperationException($"{LogPrefix} Unknown message type: {type}");
                     }
-                    while (reader.Peek() != -1);
                 }
-                catch (InvalidOperationException ex)
-                {
-                    dispatcher(() => Console.WriteLine($"{ex.Message}\n{ex.StackTrace}"));
-                }
-                catch
-                {
-                    // Ignores another "Operation failed successfully" message)
-                    // Gosh, that's a lot of try-catch statements.
-                }
+            }
+            catch (Exception ex)
+            {
+                dispatcher(() => ExceptionLogger($"{LogPrefix} Reader: {ex.Message}\n{ex.StackTrace}"));
             }
 
             Thread.Sleep(HeartbeatMs);
@@ -680,6 +728,7 @@ public abstract class Transporter : IDisposable
 
     protected void StatusHandler()
     {
+        // TODO: Fix.
         while (!canceled)
         {
             if (!m_Active)
@@ -692,8 +741,8 @@ public abstract class Transporter : IDisposable
             {
                 if (!canceled)
                 {
-                    int tick = Environment.TickCount;
-                    Status = (tick - lastConnectionTime) < TimeoutDelayMs;
+                    //int tick = Environment.TickCount;
+                    Status = true;//(tick - lastConnectionTime) < TimeoutDelayMs;
                 }
             });
 
