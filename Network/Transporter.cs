@@ -39,6 +39,7 @@ public abstract class Transporter : IDisposable
         private set
         {
             if (m_Status == value) return;
+            m_Status = value;
             if (value)
             {
                 OnConnected();
@@ -148,6 +149,7 @@ public abstract class Transporter : IDisposable
     protected readonly List<Message> messages = [];
     protected readonly Action<Action> dispatcher;
     protected readonly Thread worker;
+    protected readonly Thread checker;
 
     protected bool m_Active = true;
     protected bool m_Status = false;
@@ -155,7 +157,7 @@ public abstract class Transporter : IDisposable
     /// <summary>
     /// <see cref="Environment.TickCount64"/> from the last time connection was made.
     /// </summary>
-    protected int lastConnectionTime = int.MinValue;
+    protected int lastConnectionTime = -100000; /// Not <see cref="int.MinValue"/>, because it overflows.
 
 
 
@@ -168,7 +170,7 @@ public abstract class Transporter : IDisposable
     /// ===     ===     ===     ===    ===  == =  -                        -  = ==  ===    ===     ===     ===     ===]]>
     private static Action<object> m_Logger = Console.WriteLine;
     private static Action<object> m_ExceptionLogger = Console.WriteLine;
-    private int m_TimeoutDelayMs = 1000;
+    private int m_TimeoutDelayMs = 3000;
     /// <summary>
     /// Whether underlying thread should be canceled.
     /// Once set to <c>true</c> - should never be set to <c>false</c> again.
@@ -197,13 +199,15 @@ public abstract class Transporter : IDisposable
         {
             Name = "Transporter Stream Reader",
         };
-
-        Listen(Message.Test, (_) => Logger($"{LogPrefix} Test message received!"));
-        Handle(Message.Test, (response, _) =>
+        checker = new Thread(StatusHandler)
         {
-            Logger($"{LogPrefix} Test request received!");
-            Respond(response);
-        });
+            Name = "Transporter Status Checker",
+            IsBackground = true,
+        };
+
+        SetupListeners();
+        worker.Start();
+        checker.Start();
     }
 
     /// <summary>
@@ -221,26 +225,39 @@ public abstract class Transporter : IDisposable
             Name = "Transporter Stream Reader",
             IsBackground = true,
         };
+        checker = new Thread(StatusHandler)
+        {
+            Name = "Transporter Status Checker",
+            IsBackground = true,
+        };
+
+        SetupListeners();
+        worker.Start();
+        checker.Start();
+    }
+
+    /// <summary>
+    /// Setups default listeners for some messages.
+    /// </summary>
+    private void SetupListeners()
+    {
+        Listen(Message.Test, (_) => Logger($"{LogPrefix} Test message received!"));
+        Handle(Message.Test, (response, _) =>
+        {
+            Logger($"{LogPrefix} Test request received!");
+            Respond(response);
+        });
     }
 
     ~Transporter()
     {
-        Dispose(false);
+        canceled = true;
     }
 
     public void Dispose()
     {
-        GC.SuppressFinalize(this);
-        Dispose(true);
-    }
-
-    private void Dispose(bool disposing)
-    {
         canceled = true;
-        if (!disposing)
-        {
-            worker.Join(1000); // Wait for the last connection to finish.
-        }
+        GC.SuppressFinalize(this);
     }
 
 
@@ -537,15 +554,14 @@ public abstract class Transporter : IDisposable
             }
 
             using var stream = Connect(ref canceled);
-            if (stream == null || stream.IsConnected)
+            if (stream == null || !stream.IsConnected)
             {
                 Thread.Sleep(HeartbeatMs * 2);
-                UpdateStatus();
                 continue;
             }
-            else SetStatusActive();
 
             // Do we need to lock list here?
+            lastConnectionTime = Environment.TickCount;
             if (m_Active && messages.Count > 0)
             {
                 while (stream.IsConnected && !canceled)
@@ -612,6 +628,10 @@ public abstract class Transporter : IDisposable
                     }
                     while (reader.Peek() != -1);
                 }
+                catch (InvalidOperationException ex)
+                {
+                    dispatcher(() => Console.WriteLine($"{ex.Message}\n{ex.StackTrace}"));
+                }
                 catch
                 {
                     // Ignores another "Operation failed successfully" message)
@@ -621,6 +641,8 @@ public abstract class Transporter : IDisposable
 
             Thread.Sleep(HeartbeatMs);
         }
+
+        Status = false;
     }
 
     protected static void ReadContent(StreamReader reader, out string name, out string content)
@@ -656,15 +678,26 @@ public abstract class Transporter : IDisposable
         content = reader.ReadLine() ?? string.Empty;
     }
 
-    protected void UpdateStatus()
+    protected void StatusHandler()
     {
-        int tick = Environment.TickCount;
-        Status = tick - lastConnectionTime <= TimeoutDelayMs;
-    }
+        while (!canceled)
+        {
+            if (!m_Active)
+            {
+                Thread.Sleep(HeartbeatMs);
+                continue;
+            }
 
-    protected void SetStatusActive()
-    {
-        lastConnectionTime = Environment.TickCount;
-        UpdateStatus();
+            dispatcher(() =>
+            {
+                if (!canceled)
+                {
+                    int tick = Environment.TickCount;
+                    Status = (tick - lastConnectionTime) < TimeoutDelayMs;
+                }
+            });
+
+            Thread.Sleep(HeartbeatMs);
+        }
     }
 }

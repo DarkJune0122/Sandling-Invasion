@@ -46,12 +46,12 @@ public static partial class Pipes
     /// <remarks>
     /// NEVER set below 1! or even 5!!! You don't need '200-1000 per Applications' updates per second!
     /// </remarks>
-    public const int HeartbeatMs = 200;
+    public const int HeartbeatMs = 250;
 
     /// <summary>
-    /// How small delays between connection checks will be.
+    /// How frequently status of different pipes will be updated.
     /// </summary>
-    public const int ConnectionHeartbeatMs = 50;
+    public const int StatusUpdateHeartbeatMs = HeartbeatMs * 2;
 
 
 

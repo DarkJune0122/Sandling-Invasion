@@ -55,6 +55,23 @@ public abstract class ClientPipe : Transporter
         }
     }
 
+    protected ClientPipe(Action<Action> dispatcher) : base(dispatcher)
+    {
+        if (Instance == null)
+        {
+            Instance = this;
+            Initialize();
+            return;
+        }
+        else
+        {
+            throw new InvalidOperationException(
+                $"{Pipes.LogPrefix} You should not instantiate multiple '{nameof(ClientPipe)}'s within one session.");
+        }
+    }
+
+
+
 
 
 
@@ -103,7 +120,14 @@ public abstract class ClientPipe : Transporter
             Pipes.ServerName, PipeName,
             PipeDirection.InOut);
 
-        stream.Connect();
-        return stream;
+        try
+        {
+            stream.Connect();
+            return stream;
+        }
+        catch
+        {
+            return null; // Sometimes happens when pipe is closed or closing.
+        }
     }
 }

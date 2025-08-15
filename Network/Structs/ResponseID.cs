@@ -148,7 +148,6 @@ public readonly struct ResponseID
         value3 >>= 8;
         value4 >>= 12;
 
-        return "0000";
         return new string((char[])[
             toHex[value1],
             toHex[value2],
