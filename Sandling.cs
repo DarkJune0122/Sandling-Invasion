@@ -1,6 +1,4 @@
-﻿using Alexandria.CharacterAPI;
-using Alexandria.DungeonAPI;
-using Alexandria.EnemyAPI;
+﻿using Alexandria.DungeonAPI;
 using Alexandria.ItemAPI;
 using Dungeonator;
 using Gungeon;
@@ -34,17 +32,6 @@ public static class Sandling
 
     /// ===     ===     ===     ===    ===  == =  -                        -  = ==  ===    ===     ===     ===     ===<![CDATA[
     /// .
-    /// .                                              Static Properties
-    /// .
-    /// ===     ===     ===     ===    ===  == =  -                        -  = ==  ===    ===     ===     ===     ===]]>
-    // public static Sandling Item { get; protected set; }
-
-
-
-
-
-    /// ===     ===     ===     ===    ===  == =  -                        -  = ==  ===    ===     ===     ===     ===<![CDATA[
-    /// .
     /// .                                               Static Methods
     /// .
     /// ===     ===     ===     ===    ===  == =  -                        -  = ==  ===    ===     ===     ===     ===]]>
@@ -52,25 +39,6 @@ public static class Sandling
     {
         // Creates the item.
         const string ItemSpritePath = $"{nameof(SandlingInvasion)}/Resources/dog_item_001.png";
-        //GameObject obj = new(ItemName);
-        //var item = obj.AddComponent<Sandling>();
-
-        //ItemBuilder.AddSpriteToObject(ItemName, ItemSpritePath, obj);
-
-        //// Registers the items.
-        //ItemBuilder.SetupItem(item, ShortDescription, LongDescription, Plugin.API);
-        //item.encounterTrackable.prerequisites = [];
-
-        //// Testing:
-        //ItemBuilder.AddPassiveStatModifier(item, PlayerStats.StatType.Health, 1, StatModifier.ModifyMethod.ADDITIVE);
-        //ItemBuilder.AddPassiveStatModifier(item, PlayerStats.StatType.Coolness, 1);
-        //item.quality = ItemQuality.C;
-
-        //GameManager.Instance.OnNewLevelFullyLoaded += () =>
-        //{
-        //    Vector2 position = GameManager.Instance.PrimaryPlayer.CenterPosition;
-        //    LootEngine.SpawnItem(item.gameObject, position, Vector2.up, 0f);
-        //};
 
         // Replaces a built-in Dog item in character's inventory.
         CompanionItem item = Game.Items.Get("gungeon:dog") as CompanionItem;
@@ -80,29 +48,6 @@ public static class Sandling
             item.SetShortDescription(ShortDescription);
             item.SetLongDescription(LongDescription);
         }
-
-        //Plugin.Log();
-        //Plugin.LogFields(item.sprite.GetCurrentSpriteDef());
-        //Plugin.Log(item.sprite.GetCurrentSpriteDef().uvs);
-        //Plugin.Log();
-        //Plugin.LogFields(dogItem.sprite.GetCurrentSpriteDef());
-        //Plugin.Log(dogItem.sprite.GetCurrentSpriteDef().uvs);
-        //tk2dSpriteDefinition definition = dogItem.sprite.GetCurrentSpriteDef();
-        //definition.texelSize = new Vector2(0.2f, 0.2f);
-
-        //int spriteID = SpriteBuilder.AddSpriteToCollection(ItemSpritePath, SpriteBuilder.itemCollection);
-        //if (dogItem.sprite is tk2dSprite sprite)
-        //{
-        //    sprite.SetSprite(spriteID);
-        //    sprite.SortingOrder = 0;
-        //    sprite.IsPerpendicular = true;
-        //}
-        //else Plugin.Warning("Dog item has unexpected sprite type.");
-
-        //Plugin.Log(Game.Enemies.Pairs);
-
-        //Plugin.Log(dogItem.sprite.Collection.FirstValidDefinition);
-        //Plugin.Log();
 
         // Overwriting dog's item sprite definition.
         Texture2D texture = ResourceExtractor.GetTextureFromResource(ItemSpritePath);
@@ -123,26 +68,6 @@ public static class Sandling
         definition.position2 = new Vector3(0f, worldWidth, 0f);
         definition.position3 = new Vector3(worldWidth, worldWidth, 0f);
 
-        // Overwriting dog's entity sprite preview.
-        //if (dogItem is not CompanionItem companion)
-        //{
-        //    Plugin.Warning("What a dog going?");
-        //    return;
-        //}
-
-        //AIActor dog = EnemyDatabase.GetOrLoadByGuid(companion.CompanionGuid);
-        //if (dog != null && companion.OverridePlayerOrbitalItem)
-        //{
-        //    Texture2D texture = ResourceExtractor.GetTextureFromResource(ItemSpritePath);
-        //    ETGMod.ReplaceTexture(definition, texture);
-
-        //    Plugin.ResetCount();
-        //    Plugin.Count(dog.sprite.Collection.spriteDefinitions.ttWhere((d) => d.name.Contains("dog")), (v) => v.name);
-        //    Plugin.Log(dog.sprite.Collection.FirstValidDefinition);
-        //    Plugin.Log("Definition sprite was replaced.");
-        //}
-        //else Plugin.Warning("Cannot locate a dog itself! Sniff it out!");
-
         SetupSpawn();
     }
 
@@ -156,7 +81,6 @@ public static class Sandling
     /// .
     /// ===     ===     ===     ===    ===  == =  -                        -  = ==  ===    ===     ===     ===     ===]]>
     private static readonly int[] DefaultOdds = [10, 40, 100, 240, 480];
-    private static readonly int[] InvasionOdds = [10, 50, 100, 200, 300];
     private static int currentOdds = 0; // Note: 0 - is a valid odd. Odds go not from [1 - 10] but [0 - 9]
 
     /// <summary>
@@ -168,7 +92,7 @@ public static class Sandling
     private static void SetupSpawn()
     {
         PickupObject sandling = Game.Items.Get("gungeon:dog");
-        
+
         DungeonHooks.OnPostDungeonGeneration += () =>
         {
             // Sandlings are professionals. They need no tutorial :D
@@ -208,7 +132,7 @@ public static class Sandling
                         if (enemy != null && enemy.healthHaver != null)
                         {
                             trackers.Add(enemy);
-                            enemy.healthHaver.OnPreDeath += (position) =>
+                            enemy.healthHaver.OnDeath += (position) =>
                             {
                                 // Removes all 'null's, if there is any.
                                 for (int i = trackers.Count - 1; i >= 0; i--)
@@ -250,10 +174,10 @@ public static class Sandling
             var area = room.area;
             Dungeon dungeon = GameManager.Instance.Dungeon;
             IntVector2 source = new(
-                Mathf.Clamp(Mathf.RoundToInt(around.x), area.basePosition.x, area.basePosition.x + area.dimensions.x),
-                Mathf.Clamp(Mathf.RoundToInt(around.y), area.basePosition.y, area.basePosition.y + area.dimensions.y));
+                Mathf.Clamp(Mathf.RoundToInt(around.x), area.basePosition.x, area.basePosition.x + area.dimensions.x - 1),
+                Mathf.Clamp(Mathf.RoundToInt(around.y), area.basePosition.y, area.basePosition.y + area.dimensions.y - 1));
             if (Utils.TryFindClosest(source,
-                (pos) => dungeon.data.CheckInBoundsAndValid(source) && dungeon.data[source].type == CellType.FLOOR,
+                (pos) => dungeon.data.CheckInBoundsAndValid(pos) && dungeon.data[pos].type == CellType.FLOOR,
                 out IntVector2 position))
             {
                 LootEngine.SpawnItem(sandling.gameObject, position.ToVector3(), Vector2.up, 0f);
@@ -269,7 +193,7 @@ public static class Sandling
 
     private static int GetSpawnOdds(int stage)
     {
-        int[] odds = Pipes.ETG.InvasionMode ? InvasionOdds : DefaultOdds;
+        int[] odds = DefaultOdds;
         if (stage < 0)
         {
             return odds[0];
@@ -289,25 +213,4 @@ public static class Sandling
             return odds[odds.Length - 1] * (stage - odds.Length + 1);
         }
     }
-
-
-
-
-
-    /// ===     ===     ===     ===    ===  == =  -                        -  = ==  ===    ===     ===     ===     ===<![CDATA[
-    /// .
-    /// .                                               Public Methods
-    /// .
-    /// ===     ===     ===     ===    ===  == =  -                        -  = ==  ===    ===     ===     ===     ===]]>
-    //public override void Pickup(PlayerController player)
-    //{
-    //    base.Pickup(player);
-    //    Plugin.Log($"Player picked up {DisplayName}");
-    //}
-
-    //public override void DisableEffect(PlayerController player)
-    //{
-    //    // TODO: Add full-screen no-respect warning.
-    //    Plugin.Log($"Player dropped or got rid of {DisplayName}! NO RESPECT!");
-    //}
 }

@@ -3,8 +3,7 @@
 - Item dropping might not be supported in multiplayer context.
 
 # v0.1.8:
-- Renewed Sandling behaviour.
-### Fixed:
+### Fixes:
 - Compass might fall in the water or get stuck in the wall.
 
 
