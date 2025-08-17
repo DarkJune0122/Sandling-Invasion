@@ -40,15 +40,8 @@
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="ExamplePassive.cs" />
-    <Compile Include="Network\Client\ClientPipe.cs" />
     <Compile Include="Network\Client\UnityDispatcher.cs" />
     <Compile Include="Network\Games\ETG.cs" />
-    <Compile Include="Network\Pipes.cs" />
-    <Compile Include="Network\Structs\Message.cs" />
-    <Compile Include="Network\Structs\MessageType.cs" />
-    <Compile Include="Network\Structs\PipeName.cs" />
-    <Compile Include="Network\Structs\ResponseID.cs" />
-    <Compile Include="Network\Transporter.cs" />
     <Compile Include="Patches\CompanionControllerPatch.cs" />
     <Compile Include="Patches\DogItemFindPatches.cs" />
     <Compile Include="SandlingInvaderData.cs" />
@@ -75,6 +68,12 @@
     </Reference>
     <Reference Include="BepInEx, Version=5.4.21.0, Culture=neutral, processorArchitecture=MSIL">
       <HintPath>packages\BepInEx.BaseLib.5.4.21\lib\net35\BepInEx.dll</HintPath>
+    </Reference>
+    <Reference Include="KCPClient">
+      <HintPath>..\..\..\CSharp\KCPClient\bin\Release\net8.0\KCPClient.dll</HintPath>
+    </Reference>
+    <Reference Include="KCPCore">
+      <HintPath>..\..\..\CSharp\KCPCore\bin\Release\net8.0\publish\KCPCore.dll</HintPath>
     </Reference>
     <Reference Include="ModTheGungeonAPI, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
       <HintPath>packages\EtG.ModTheGungeonAPI.1.8.7\lib\net35\ModTheGungeonAPI.dll</HintPath>

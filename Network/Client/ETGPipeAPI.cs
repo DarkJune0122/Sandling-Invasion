@@ -1,13 +1,10 @@
-﻿using Alexandria.DungeonAPI;
+﻿using KCPClient;
 using SandlingInvasion;
 
 /// <summary>
 /// Gives functions to work with Konoob Control Panel messages in Enter the Gungeon.
 /// </summary>
-/// <![CDATA[v0.0.1]]>
-[System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1050:Declare types in namespaces", Justification = "For easier distribution.")]
-[System.Diagnostics.CodeAnalysis.SuppressMessage("CodeQuality", "IDE0079:Remove unnecessary suppression", Justification = "To seal the one above")]
-public sealed class ETGPipeAPI() : ClientPipe(Pipes.ETG.PipeName, UnityDispatcher.Dispatch)
+public sealed class ETGPipeAPI() : ClientPipe(Pipes.ETG.PipeName)
 {
     /// ===     ===     ===     ===    ===  == =  -                        -  = ==  ===    ===     ===     ===     ===<![CDATA[
     /// .

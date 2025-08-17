@@ -1,6 +1,7 @@
 ﻿using BepInEx;
 using Gungeon;
 using HarmonyLib;
+using KCPCore;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -64,7 +65,8 @@ namespace SandlingInvasion
                 harmony = new Harmony(GUID);
                 harmony.PatchAll();
                 Utils.Initialize();
-                Pipes.Initialize();
+                Transporter.Dispatcher = UnityDispatcher.Dispatch;
+                KCPCore.Pipes.Initialize();
                 ClientPipe.Initialize<ETGPipeAPI>();
                 Register();
             }
