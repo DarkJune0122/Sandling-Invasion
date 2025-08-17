@@ -156,8 +156,12 @@ public static class Sandling
     /// .
     /// ===     ===     ===     ===    ===  == =  -                        -  = ==  ===    ===     ===     ===     ===]]>
     private static readonly int[] DefaultOdds = [10, 40, 100, 240, 480];
-    private static readonly int[] InvasionOdds = [10, 50, 100, 200, 300];
-    private static int currentOdds = 0; // Note: 0 - is a valid odd. Odds go not from [1 - 10] but [0 - 9]
+
+    // Maybe come up with an adaptive odds system? Factor in amount of users invading the gungeon?
+    private static readonly int[] InvasionOdds = [0, 20, 50, 100, 200];
+
+    // Note: 0 - is a valid odd. Odds go not from [1 - 10] but [0 - 9]
+    private static int currentOdds = 0;
 
     /// <summary>
     /// Last killed enemy, if any.

@@ -57,6 +57,7 @@
     <Compile Include="Sandling.cs" />
     <Compile Include="Network\Client\ETGPipeAPI.cs" />
     <Compile Include="SandlingBehavior.cs" />
+    <Compile Include="UI\SandlingPanel.cs" />
     <Compile Include="Utils.cs" />
   </ItemGroup>
   <ItemGroup>
@@ -267,6 +268,12 @@
     <EmbeddedResource Include="Resources\dog_item_001.png" />
   </ItemGroup>
   <ItemGroup />
+  <ItemGroup>
+    <EmbeddedResource Include="Resources\Sandling\idle_ui_001.png" />
+    <EmbeddedResource Include="Resources\Sandling\idle_ui_002.png" />
+    <EmbeddedResource Include="Resources\Sandling\idle_ui_003.png" />
+    <EmbeddedResource Include="Resources\Sandling\idle_ui_004.png" />
+  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <Import Project="packages\BepInEx.Core.5.4.21\build\BepInEx.Core.targets" Condition="Exists('packages\BepInEx.Core.5.4.21\build\BepInEx.Core.targets')" />
   <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">

@@ -1,11 +1,5 @@
-﻿using Dungeonator;
-using JetBrains.Annotations;
-using Microsoft.Win32;
-using System;
+﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Runtime.CompilerServices;
-using System.Text;
 using UnityEngine;
 
 namespace SandlingInvasion;
@@ -130,5 +124,76 @@ public static class Utils
 
         cell = source;
         return false;
+    }
+
+
+
+
+
+    /// ===     ===     ===     ===    ===  == =  -                        -  = ==  ===    ===     ===     ===     ===<![CDATA[
+    /// .
+    /// .                                                     UI
+    /// .
+    /// ===     ===     ===     ===    ===  == =  -                        -  = ==  ===    ===     ===     ===     ===]]>
+    public static tk2dSpriteCollectionData NewCollection(string name, Texture2D[] textures, float ppt = 16f)
+    {
+        // Create GameObject for the collection
+        var go = new GameObject(name);
+        UnityEngine.Object.DontDestroyOnLoad(go);
+
+        var collection = go.AddComponent<tk2dSpriteCollectionData>();
+        collection.spriteCollectionName = name;
+        collection.textures = textures;
+        collection.materials = new Material[textures.Length];
+        collection.materialInsts = new Material[textures.Length];
+        collection.spriteDefinitions = new tk2dSpriteDefinition[textures.Length];
+
+        Shader shader = Shader.Find("tk2d/BlendVertexColor");
+        for (int i = 0; i < textures.Length; i++)
+        {
+            Texture2D tex = textures[i];
+
+            // Create a material for each texture.
+            Material mat = new(shader)
+            {
+                mainTexture = tex
+            };
+
+            collection.materials[i] = mat;
+            collection.materialInsts[i] = mat;
+
+            // Create sprite definition
+            float xHalf = tex.width / (ppt * 2f);
+            float yHalf = tex.height / (ppt * 2f);
+            float xScale = tex.width / ppt;
+            float yScale = tex.height / ppt;
+            tk2dSpriteDefinition def = new()
+            {
+                name = tex.name,
+                material = mat,
+                materialInst = mat,
+                position0 = new(0, 0, 0),
+                position1 = new(xScale, 0, 0),
+                position2 = new(xScale, yScale, 0),
+                position3 = new(0, yScale, 0),
+                uvs =
+                [
+                    new(0, 0),
+                    new(1, 0),
+                    new(1, 1),
+                    new(0, 1)
+                ],
+
+                boundsDataCenter = new Vector3(xHalf, yHalf, 0f),
+                boundsDataExtents = new Vector3(xScale, yScale, 0f),
+                untrimmedBoundsDataCenter = new Vector3(xHalf, yHalf, 0f),
+                untrimmedBoundsDataExtents = new Vector3(xScale, yScale, 0f),
+                texelSize = new Vector2(1.0f / tex.width, 1.0f / tex.height)
+            };
+
+            collection.spriteDefinitions[i] = def;
+        }
+
+        return collection;
     }
 }
