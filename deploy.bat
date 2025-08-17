@@ -28,6 +28,8 @@ xcopy /y "%root%\CHANGELOG.md" "%deploy%"
 xcopy /y "%root%\icon.png" "%deploy%"
 xcopy /y "%root%\manifest.json" "%deploy%"
 xcopy /y "%root%\bin\Debug\%file%" "%deploy%"
+xcopy /y "%root%\bin\Debug\KCPCoreFramework35.dll" "%deploy%"
+xcopy /y "%root%\bin\Debug\KCPClientFramework35.dll" "%deploy%"
 call "%root%\move.bat" -target "%root%\plugins" -destination "%deploy%\plugins"
 
 :: WinRAR's "a" = add files to archive

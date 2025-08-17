@@ -1,6 +1,7 @@
 ﻿using BepInEx;
 using Gungeon;
 using HarmonyLib;
+using KCPClient;
 using KCPCore;
 using System;
 using System.Collections.Generic;
@@ -20,7 +21,7 @@ namespace SandlingInvasion
         public const string GUID = "sandlings-united.etg.sandling-invasion";
         public const string NAME = "Sandling Invasion!";
         public const string API = "SandlingAPI";
-        public const string VERSION = "0.1.8";
+        public const string VERSION = "0.2.0";
         public const string TEXT_COLOR = "#FFD97F";
 
 
@@ -66,8 +67,8 @@ namespace SandlingInvasion
                 harmony.PatchAll();
                 Utils.Initialize();
                 Transporter.Dispatcher = UnityDispatcher.Dispatch;
-                KCPCore.Pipes.Initialize();
-                ClientPipe.Initialize<ETGPipeAPI>();
+                Pipes.Initialize();
+                ClientPipe.Initialize<ETGPipe>(Scope.Commands);
                 Register();
             }
             catch (Exception e)

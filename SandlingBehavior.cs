@@ -16,7 +16,7 @@ public sealed class SandlingBehavior : BehaviorBase
     {
         get
         {
-            if (Pipes.ETG.InvasionMode) return InvasionChanceToFindItemOnRoomClear;
+            if (ETGPipe.InvasionMode) return InvasionChanceToFindItemOnRoomClear;
             else return RegularChanceToFindItemOnRoomClear;
         }
     }
@@ -55,7 +55,6 @@ public sealed class SandlingBehavior : BehaviorBase
     /// .                                               Public Methods
     /// .
     /// ===     ===     ===     ===    ===  == =  -                        -  = ==  ===    ===     ===     ===     ===]]>
-
     public override void Start()
     {
         base.Start();

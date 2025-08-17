@@ -273,7 +273,7 @@ public static class Sandling
 
     private static int GetSpawnOdds(int stage)
     {
-        int[] odds = Pipes.ETG.InvasionMode ? InvasionOdds : DefaultOdds;
+        int[] odds = ETGPipe.InvasionMode ? InvasionOdds : DefaultOdds;
         if (stage < 0)
         {
             return odds[0];

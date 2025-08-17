@@ -25,9 +25,9 @@ public static class CompanionControllerPatch
         {
             // Prevents petting, if requested.
             Plugin.Log("Sandling initialized.");
-            Pipes.ETG.InvasionModeChanged += (flag) => __instance.CanBePet = Pipes.ETG.WhetherPettingAllowed;
-            Pipes.ETG.PettingAllowedChanged += (flag) => __instance.CanBePet = Pipes.ETG.WhetherPettingAllowed;
-            __instance.CanBePet = Pipes.ETG.WhetherPettingAllowed;
+            ETGPipe.InvasionModeChanged += (flag) => __instance.CanBePet = ETGPipe.WhetherPettingAllowed;
+            ETGPipe.PettingAllowedChanged += (flag) => __instance.CanBePet = ETGPipe.WhetherPettingAllowed;
+            __instance.CanBePet = ETGPipe.WhetherPettingAllowed;
         }
     }
 
