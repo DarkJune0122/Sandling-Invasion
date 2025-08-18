@@ -66,7 +66,6 @@ namespace SandlingInvasion
                 harmony = new Harmony(GUID);
                 harmony.PatchAll();
                 Utils.Initialize();
-                Transporter.Dispatcher = UnityDispatcher.Dispatch;
                 Pipes.Initialize();
                 ClientPipe.Initialize<ETGPipe>(Scope.Commands);
                 Register();
@@ -147,6 +146,25 @@ namespace SandlingInvasion
         public static void Log(object obj, string color = "#FFFFFF") => Log(obj.ToStringSafe(), color);
         public static void Log(string text, string color = "#FFFFFF")
         {
+            if (color == "#FFFFFF") LogInternal(text);
+            else LogInternal(text, color);
+        }
+
+        private static void LogInternal(string text)
+        {
+            if (text.Contains('\n'))
+            {
+                foreach (var line in text.Split(SplitSeparators, StringSplitOptions.RemoveEmptyEntries))
+                {
+                    if (string.IsNullOrEmpty(line)) continue;
+                    else ETGModConsole.Log($"[SI] {line}");
+                }
+            }
+            else ETGModConsole.Log($"[SI] {text}");
+        }
+
+        private static void LogInternal(string text, string color)
+        {
             if (text.Contains('\n'))
             {
                 foreach (var line in text.Split(SplitSeparators, StringSplitOptions.RemoveEmptyEntries))
@@ -157,6 +175,10 @@ namespace SandlingInvasion
             }
             else ETGModConsole.Log($"[SI] <color={color}>{text}</color>");
         }
+
+
+
+
 
         /// <summary>
         /// Logs info from all fields of the object.

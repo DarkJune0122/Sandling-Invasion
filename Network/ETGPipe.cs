@@ -172,15 +172,9 @@ public sealed class ETGPipe() : ClientPipe(PipeName)
         base.Initialize();
         UnityDispatcher.Initialize();
         UnityDispatcher.ExceptionLogger = Plugin.Log;
+        Dispatcher = UnityDispatcher.Dispatch;
         Logger = Plugin.Log;
         ExceptionLogger = Plugin.Log;
-        ETGModConsole.Commands.AddUnit("kcpconnect", delegate
-        {
-            // Temporary solution for reconnecting.
-            Status = false;
-            ClientPipe.Instance.Relay.AskToRegisterPipe();
-        });
-
         RegisterCommands();
         SetupEvents();
     }
@@ -215,9 +209,9 @@ public sealed class ETGPipe() : ClientPipe(PipeName)
     {
         //DungeonHooks.OnPostDungeonGeneration += () => Send(Pipes.ETG.NewGameEvent);
 
-        //ClientPipe.Instance?.Listen(SettingInvasionMode, (v) => InvasionMode = Message.Boolean(v));
-        //ClientPipe.Instance?.Listen(SettingPettingAllowed, (v) => PettingAllowed = Message.Boolean(v));
-        ClientPipe.Instance?.Listen(ReplacePlayerEvent, (content) =>
+        //Listen(SettingInvasionMode, (v) => InvasionMode = Message.Boolean(v));
+        //Listen(SettingPettingAllowed, (v) => PettingAllowed = Message.Boolean(v));
+        Listen(ReplacePlayerEvent, (content) =>
         {
             Message.Unpack(content, out string resignedPlayer, out string newPlayer);
             ReplacePlayer?.Invoke(resignedPlayer, newPlayer);

@@ -1,5 +1,7 @@
-﻿using System;
+﻿using KCPCore;
+using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using UnityEngine;
 
 /// <summary>
@@ -63,6 +65,7 @@ public sealed class UnityDispatcher : MonoBehaviour
     {
         lock (queue)
         {
+            //Transporter.Logger(new StackTrace().ToStringSafe());
             queue.Enqueue(action);
         }
     }
