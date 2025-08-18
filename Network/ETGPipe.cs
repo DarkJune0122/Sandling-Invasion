@@ -174,14 +174,20 @@ public sealed class ETGPipe() : ClientPipe(PipeName)
         UnityDispatcher.ExceptionLogger = Plugin.Log;
         Logger = Plugin.Log;
         ExceptionLogger = Plugin.Log;
-        CommandReceived += HandleCommand;
+        ETGModConsole.Commands.AddUnit("kpcconnect", delegate
+        {
+            // Temporary solution for reconnecting.
+            Status = false;
+            ClientPipe.Instance.Relay.AskToRegisterPipe();
+        });
+
+        RegisterCommands();
         SetupEvents();
     }
 
     protected override void OnConnected()
     {
         base.OnConnected();
-        RegisterCommands();
         InvasionMode = true; // TODO: Make pipes build a toggle to turn on/off invasion mode server-side.
         PettingAllowed = false; // TODO: Same here, but make hide this option by default. Maybe also hide it if OBS is active.
         LogPrefix(Pipes.GetConnectionEstablishedMessage());
@@ -195,38 +201,18 @@ public sealed class ETGPipe() : ClientPipe(PipeName)
         LogPrefix(Pipes.GetConnectionTerminatedMessage());
     }
 
-    private void RegisterCommands()
+    private new void RegisterCommands()
     {
-        Send(Message.RegisterCommands, Message.Pack(
-            InvadeCommand,
-            UninvadeCommand,
-            ResignCommand,
-            BlankCommand,
-            AmmoCommand,
-            HealthCommand,
-            ShieldCommand
-        ));
-    }
-
-    private void HandleCommand(string username, string command)
-    {
-        LogPrefix($"{username} used {command}.");
-        switch (command)
-        {
-            case BlankCommand: Blank?.Invoke(username); break;
-            case AmmoCommand: Ammo?.Invoke(username); break;
-            case HealthCommand: Health?.Invoke(username); break;
-            case ShieldCommand: Shield?.Invoke(username); break;
-        }
+        Command((user) => Log("Invasion is not supported yet."), InvadeCommand, UninvadeCommand, ResignCommand);
+        Command(BlankCommand, (user) => Blank?.Invoke(user));
+        Command(AmmoCommand, (user) => Ammo?.Invoke(user));
+        Command(HealthCommand, (user) => Health?.Invoke(user));
+        Command(ShieldCommand, (user) => Shield?.Invoke(user));
+        base.RegisterCommands();
     }
 
     private void SetupEvents()
     {
-        //Pipes.ETG.Blank += (username) => Plugin.Log($"{username} - {Pipes.ETG.BlankCommand}");
-        //Pipes.ETG.Ammo += (username) => Plugin.Log($"{username} - {Pipes.ETG.AmmoCommand}");
-        //Pipes.ETG.Health += (username) => Plugin.Log($"{username} - {Pipes.ETG.HealthCommand}");
-        //Pipes.ETG.Shield += (username) => Plugin.Log($"{username} - {Pipes.ETG.ShieldCommand}");
-
         //DungeonHooks.OnPostDungeonGeneration += () => Send(Pipes.ETG.NewGameEvent);
 
         //ClientPipe.Instance?.Listen(SettingInvasionMode, (v) => InvasionMode = Message.Boolean(v));
