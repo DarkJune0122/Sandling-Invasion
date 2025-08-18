@@ -174,7 +174,7 @@ public sealed class ETGPipe() : ClientPipe(PipeName)
         UnityDispatcher.ExceptionLogger = Plugin.Log;
         Logger = Plugin.Log;
         ExceptionLogger = Plugin.Log;
-        ETGModConsole.Commands.AddUnit("kpcconnect", delegate
+        ETGModConsole.Commands.AddUnit("kcpconnect", delegate
         {
             // Temporary solution for reconnecting.
             Status = false;
