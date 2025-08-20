@@ -1,6 +1,4 @@
-﻿using Alexandria.CharacterAPI;
-using Alexandria.DungeonAPI;
-using Alexandria.EnemyAPI;
+﻿using Alexandria.DungeonAPI;
 using Alexandria.ItemAPI;
 using Dungeonator;
 using Gungeon;
@@ -172,7 +170,7 @@ public static class Sandling
     private static void SetupSpawn()
     {
         PickupObject sandling = Game.Items.Get("gungeon:dog");
-        
+
         DungeonHooks.OnPostDungeonGeneration += () =>
         {
             // Sandlings are professionals. They need no tutorial :D

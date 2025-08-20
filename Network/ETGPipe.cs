@@ -6,7 +6,7 @@ using System;
 /// <summary>
 /// Gives functions to work with Konoob Control Panel messages in Enter the Gungeon.
 /// </summary>
-public sealed class ETGPipe() : ClientPipe(PipeName)
+public sealed class ETGPipe : ClientPipe<ETGPipe>
 {
     /// ===     ===     ===     ===    ===  == =  -                        -  = ==  ===    ===     ===     ===     ===<![CDATA[
     /// .
@@ -24,8 +24,6 @@ public sealed class ETGPipe() : ClientPipe(PipeName)
     /// .                                              Static Properties
     /// .
     /// ===     ===     ===     ===    ===  == =  -                        -  = ==  ===    ===     ===     ===     ===]]>
-    public static new ETGPipe Instance { get; } = (ETGPipe)ClientPipe.Instance;
-
     /// <summary>
     /// Whether 'Sandling Invasion' mode was activated in KCP.
     /// </summary>
@@ -164,21 +162,26 @@ public sealed class ETGPipe() : ClientPipe(PipeName)
 
     /// ===     ===     ===     ===    ===  == =  -                        -  = ==  ===    ===     ===     ===     ===<![CDATA[
     /// .
-    /// .                                              Implementations
+    /// .                                                Constructors
     /// .
     /// ===     ===     ===     ===    ===  == =  -                        -  = ==  ===    ===     ===     ===     ===]]>
-    protected override void Initialize()
+    public ETGPipe() : base(PipeName, Scope.Commands)
     {
-        base.Initialize();
         UnityDispatcher.Initialize();
         UnityDispatcher.ExceptionLogger = Plugin.Log;
-        Dispatcher = UnityDispatcher.Dispatch;
+        DispatcherBase.Replace(UnityDispatcher.Dispatch, true);
         Logger = Plugin.Log;
         ExceptionLogger = Plugin.Log;
         RegisterCommands();
         SetupEvents();
     }
 
+
+    /// ===     ===     ===     ===    ===  == =  -                        -  = ==  ===    ===     ===     ===     ===<![CDATA[
+    /// .
+    /// .                                              Implementations
+    /// .
+    /// ===     ===     ===     ===    ===  == =  -                        -  = ==  ===    ===     ===     ===     ===]]>
     protected override void OnConnected()
     {
         base.OnConnected();

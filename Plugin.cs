@@ -66,8 +66,7 @@ namespace SandlingInvasion
                 harmony = new Harmony(GUID);
                 harmony.PatchAll();
                 Utils.Initialize();
-                Pipes.Initialize();
-                ClientPipe.Initialize<ETGPipe>(Scope.Commands);
+                ETGPipe.Initialize();
                 Register();
             }
             catch (Exception e)
