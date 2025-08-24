@@ -211,19 +211,33 @@ public sealed class ETGPipe : ClientPipe<ETGPipe>
     /// .                                              Implementations
     /// .
     /// ===     ===     ===     ===    ===  == =  -                        -  = ==  ===    ===     ===     ===     ===]]>
-    protected override void OnConnected()
+    protected override void Connected()
     {
-        base.OnConnected();
+        base.Connected();
+        // TODO: Update properly, based on "Enable Feature" status on KCP UI.
+        // Maybe some categories will have a toggle you can use? Will be nice.
+        // TODO: Add a reorderable array, so you can influence, for example, which players will join first.
+        // And as such - prioritize early joiners over other players, with 20-30% deviation (adjustable in Advanced settings)
+        // TODO: Implement advanced settings. Maybe add multiple stages of advancing? Although, I double it will be useful.
+        // Better to add conditional UI elements - UI elements will only be shown if specific toggle is toggled.
+        // TODO: Add "Header Toggles" and other header UI elements - to show on a "fixed" header on of the category.
+        // TODO: (For much later in development) Add stackable headers for categories. Will be needed for large UI controls.
+        // TODO: Handle all UI elements for a specific pipe on a separate Page, AND allow clients to create multiple pages, for convenience.
+        // TODO: Add short name, long name, and description for said pages - needed for easier navigation.
+        // TODO: Save all the names in the Server memory, to restore all options without starting a client, etc.
+        // TODO: Allow runtime (not initialize-only) UI creation.
         InvasionMode = true; // TODO: Make pipes build a toggle to turn on/off invasion mode server-side.
         PettingAllowed = false; // TODO: Same here, but make hide this option by default. Maybe also hide it if OBS is active.
+        Console.WriteLine("Connection successful");
         LogPrefix(Pipes.GetConnectionEstablishedMessage());
     }
 
-    protected override void OnDisconnected()
+    protected override void Disconnected()
     {
-        base.OnDisconnected();
+        base.Disconnected();
         InvasionMode = false; // TODO: Make pipes build a toggle to turn on/off invasion mode server-side.
         PettingAllowed = true; // TODO: Same here, but make hide this option by default. Maybe also hide it if OBS is active.
+        Console.WriteLine("Connection terminated");
         LogPrefix(Pipes.GetConnectionTerminatedMessage());
     }
 }
