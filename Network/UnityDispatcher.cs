@@ -19,6 +19,7 @@ public sealed class UnityDispatcher : MonoBehaviour
     /// .                                              Static Properties
     /// .
     /// ===     ===     ===     ===    ===  == =  -                        -  = ==  ===    ===     ===     ===     ===]]>
+    public static event Action OnShutdown;
     public static Action<Exception> ExceptionLogger
     {
         get => m_ExceptionLogger;
@@ -107,5 +108,10 @@ public sealed class UnityDispatcher : MonoBehaviour
                 ExceptionLogger.Invoke(ex);
             }
         }
+    }
+
+    public void OnDestroy()
+    {
+        OnShutdown?.Invoke();
     }
 }

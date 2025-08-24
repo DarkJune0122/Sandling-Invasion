@@ -165,16 +165,45 @@ public sealed class ETGPipe : ClientPipe<ETGPipe>
     /// .                                                Constructors
     /// .
     /// ===     ===     ===     ===    ===  == =  -                        -  = ==  ===    ===     ===     ===     ===]]>
-    public ETGPipe() : base(PipeName, Scope.Commands)
+    public ETGPipe() : base(PipeName, Scope.Commands) { }
+
+
+
+
+
+    /// ===     ===     ===     ===    ===  == =  -                        -  = ==  ===    ===     ===     ===     ===<![CDATA[
+    /// .
+    /// .                                              Protected Methods
+    /// .
+    /// ===     ===     ===     ===    ===  == =  -                        -  = ==  ===    ===     ===     ===     ===]]>
+    protected override void Init()
     {
-        UnityDispatcher.Initialize();
+        base.Init();
+        UnityDispatcher.OnShutdown += Pipes.Shutdown;
         UnityDispatcher.ExceptionLogger = Plugin.Log;
+        UnityDispatcher.Initialize();
         DispatcherBase.Replace(UnityDispatcher.Dispatch, true);
         Logger = Plugin.Log;
         ExceptionLogger = Plugin.Log;
-        RegisterCommands();
-        SetupEvents();
+
+        // Commands:
+        Command((user) => Log("Invasion is not supported yet."), InvadeCommand, UninvadeCommand, ResignCommand);
+        Command(BlankCommand, (user) => Blank?.Invoke(user));
+        Command(AmmoCommand, (user) => Ammo?.Invoke(user));
+        Command(HealthCommand, (user) => Health?.Invoke(user));
+        Command(ShieldCommand, (user) => Shield?.Invoke(user));
+
+        // Events:
+        // TODO: Replace with local user enter/leave handlers, but show those players on KCP UI.
+        Listen(ReplacePlayerEvent, (content) =>
+        {
+            Message.Unpack(content, out string resignedPlayer, out string newPlayer);
+            ReplacePlayer?.Invoke(resignedPlayer, newPlayer);
+        });
     }
+
+
+
 
 
     /// ===     ===     ===     ===    ===  == =  -                        -  = ==  ===    ===     ===     ===     ===<![CDATA[
@@ -196,28 +225,5 @@ public sealed class ETGPipe : ClientPipe<ETGPipe>
         InvasionMode = false; // TODO: Make pipes build a toggle to turn on/off invasion mode server-side.
         PettingAllowed = true; // TODO: Same here, but make hide this option by default. Maybe also hide it if OBS is active.
         LogPrefix(Pipes.GetConnectionTerminatedMessage());
-    }
-
-    private new void RegisterCommands()
-    {
-        Command((user) => Log("Invasion is not supported yet."), InvadeCommand, UninvadeCommand, ResignCommand);
-        Command(BlankCommand, (user) => Blank?.Invoke(user));
-        Command(AmmoCommand, (user) => Ammo?.Invoke(user));
-        Command(HealthCommand, (user) => Health?.Invoke(user));
-        Command(ShieldCommand, (user) => Shield?.Invoke(user));
-        base.RegisterCommands();
-    }
-
-    private void SetupEvents()
-    {
-        //DungeonHooks.OnPostDungeonGeneration += () => Send(Pipes.ETG.NewGameEvent);
-
-        //Listen(SettingInvasionMode, (v) => InvasionMode = Message.Boolean(v));
-        //Listen(SettingPettingAllowed, (v) => PettingAllowed = Message.Boolean(v));
-        Listen(ReplacePlayerEvent, (content) =>
-        {
-            Message.Unpack(content, out string resignedPlayer, out string newPlayer);
-            ReplacePlayer?.Invoke(resignedPlayer, newPlayer);
-        });
     }
 }
