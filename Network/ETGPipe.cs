@@ -165,7 +165,7 @@ public sealed class ETGPipe : ClientPipe<ETGPipe>
     /// .                                                Constructors
     /// .
     /// ===     ===     ===     ===    ===  == =  -                        -  = ==  ===    ===     ===     ===     ===]]>
-    public ETGPipe() : base(PipeName, Scope.Commands) { }
+    public ETGPipe() : base(Scope.Commands) { }
 
 
 
